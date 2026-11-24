@@ -4,230 +4,332 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Food Planer — планировщик питания</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<meta name="theme-color" content="#1f7a3c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Food Planer">
 <style>
+  :root { --a:#34c759; --a2:#1f7a3c; --a3:#0b3d1e; --card:rgba(255,255,255,.9); --ink:#1c2b20; --muted:#5f6f63; --line:#e3ebe4; --pale:#f1f8f2; --tile:#fff; --ghost:rgba(0,0,0,.08); }
+  [data-scheme=blue]   { --a:#0a84ff; --a2:#0a5bb5; --a3:#06223f; }
+  [data-scheme=orange] { --a:#ff9500; --a2:#c76a00; --a3:#4a2a00; }
+  [data-scheme=purple] { --a:#af52de; --a2:#7a2fb0; --a3:#2a1140; }
+  [data-theme=dark] { --card:rgba(24,34,28,.92); --ink:#e9f3ec; --muted:#9fb3a4; --line:#2f3f35; --pale:#22302a; --tile:#243229; --ghost:rgba(255,255,255,.12); }
+
   * { box-sizing: border-box; }
-  body { font-family: system-ui, -apple-system, sans-serif; background: #f3f8f2; margin: 0; color: #223; }
-  header { background: #2e7d32; color: #fff; padding: 18px; text-align: center; }
-  header h1 { margin: 0; font-size: 28px; }
-  header p { margin: 4px 0 0; opacity: .9; }
-  .steps { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; padding: 12px; }
-  .step { padding: 6px 12px; border-radius: 20px; background: #dfe9dd; cursor: pointer; font-size: 14px; }
-  .step.active { background: #2e7d32; color: #fff; }
-  .step.done { background: #a5d6a7; }
-  main { max-width: 960px; margin: 0 auto; padding: 12px; }
-  .card { background: #fff; border-radius: 14px; padding: 18px; margin-bottom: 14px; box-shadow: 0 2px 6px rgba(0,0,0,.08); }
-  h2 { margin-top: 0; }
-  button { background: #2e7d32; color: #fff; border: 0; border-radius: 10px; padding: 10px 16px; cursor: pointer; font-size: 15px; }
-  button:hover { opacity: .9; }
-  button.ghost { background: #e0e0e0; color: #333; }
-  button.small { padding: 4px 10px; font-size: 13px; }
+  html, body { margin: 0; min-height: 100%; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; color: var(--ink);
+    background: linear-gradient(160deg, var(--a3), var(--a2) 55%, var(--a)) fixed; min-height: 100vh; position: relative; }
+  [data-theme=dark] body::before { content: ""; position: fixed; inset: 0; background: rgba(0,0,0,.45); }
+  .bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .bg span { position: absolute; opacity: .2; user-select: none; animation: float 12s ease-in-out infinite alternate; }
+  @keyframes float { from { transform: translateY(0) rotate(-6deg); } to { transform: translateY(-26px) rotate(8deg); } }
+  .wrap { position: relative; z-index: 1; max-width: 980px; margin: 0 auto; padding: 16px; }
+  header { text-align: center; color: #fff; padding: 12px 0 4px; }
+  header h1 { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -.5px; }
+  header p { margin: 4px 0 0; opacity: .85; }
+  .seg { display: flex; flex-wrap: wrap; background: rgba(255,255,255,.18); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-radius: 14px; padding: 4px; margin: 14px auto; max-width: 620px; gap: 4px; }
+  .seg button { flex: 1 1 120px; background: transparent; color: #fff; border-radius: 10px; padding: 9px; font-weight: 600; font-size: 14px; }
+  .seg button.on { background: #fff; color: var(--a3); }
+  .steps { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 6px 0 12px; }
+  .step { padding: 6px 12px; border-radius: 20px; background: rgba(255,255,255,.2); color: #fff; font-size: 13px; cursor: pointer; }
+  .step.active { background: #fff; color: var(--a3); font-weight: 600; }
+  .step.done { background: rgba(255,255,255,.4); }
+  .card { background: var(--card); backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border-radius: 22px; padding: 18px; margin-bottom: 14px; box-shadow: 0 8px 30px rgba(0,0,0,.18); border: 1px solid rgba(255,255,255,.2); }
+  h2 { margin: 0 0 6px; font-size: 22px; letter-spacing: -.3px; }
+  h3 { margin: 14px 0 8px; font-size: 17px; }
+  button { font: inherit; background: var(--a); color: #fff; border: 0; border-radius: 12px; padding: 10px 18px; cursor: pointer; font-weight: 600; transition: transform .15s, opacity .15s; }
+  button:hover { opacity: .92; }
+  button:active { transform: scale(.96); }
+  button.ghost { background: var(--ghost); color: var(--ink); }
+  button.small { padding: 5px 11px; font-size: 13px; border-radius: 9px; }
+  input[type=number], input[type=text] { font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--tile); color: var(--ink); outline: none; }
+  input[type=number] { width: 130px; }
+  input[type=text] { flex: 1; min-width: 180px; }
+  input:focus { border-color: var(--a); }
+  input[type=checkbox], input[type=radio] { accent-color: var(--a); width: 18px; height: 18px; }
+  input[type=range] { width: 100%; accent-color: var(--a); }
+  .muted { color: var(--muted); font-size: 14px; }
   .nav { display: flex; justify-content: space-between; margin-top: 16px; gap: 8px; flex-wrap: wrap; }
-  input[type=number] { width: 130px; padding: 8px; font-size: 16px; border: 1px solid #bbb; border-radius: 8px; }
-  input[type=range] { width: 100%; margin: 12px 0; }
-  .muted { color: #777; font-size: 14px; }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
-  .chip { border: 1px solid #2e7d32; border-radius: 10px; padding: 8px 12px; cursor: pointer; }
-  .chip:has(input:checked) { background: #e8f5e9; }
-  .counter { display: flex; align-items: center; gap: 16px; font-size: 24px; }
-  .counter span { min-width: 50px; text-align: center; }
-  .dishes { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 8px; margin-bottom: 14px; }
-  .dish-pick { display: flex; gap: 8px; align-items: center; border: 1px solid #ddd; border-radius: 10px; padding: 8px; cursor: pointer; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; align-items: center; }
+  .chip { border: 1px solid var(--line); background: var(--tile); color: var(--ink); border-radius: 12px; padding: 8px 12px; cursor: pointer; display: flex; gap: 6px; align-items: center; }
+  .chip:has(input:checked) { border-color: var(--a); background: var(--pale); }
+  .counter { display: flex; align-items: center; gap: 18px; font-size: 26px; }
+  .counter span { min-width: 50px; text-align: center; font-weight: 700; }
+  .dishes { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .dish-pick { display: flex; gap: 10px; align-items: center; background: var(--tile); border-radius: 16px; padding: 8px; cursor: pointer; }
   .day-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; align-items: baseline; }
-  .meal { border-top: 1px solid #eee; padding: 10px 0; }
+  .meal { border-top: 1px solid var(--line); padding: 10px 0; }
   .meal-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .meal-top b { flex: 1; min-width: 200px; }
-  .tag { background: #fff3e0; color: #e65100; border-radius: 6px; padding: 2px 8px; font-size: 13px; }
+  .tag { background: #fff1e0; color: #c75000; border-radius: 8px; padding: 3px 9px; font-size: 13px; font-weight: 600; }
+  .tag.ok { background: #e3f5e7; color: #1e7a36; }
+  .tag.miss { background: #fde9e7; color: #b3261e; }
   details { margin-top: 6px; }
-  summary { cursor: pointer; color: #2e7d32; }
-  .alert { background: #fff8e1; border-left: 4px solid #ffb300; padding: 10px; border-radius: 8px; margin: 8px 0; }
-  .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-bottom: 10px; }
-  .stats div { background: #f6fbf6; padding: 10px; border-radius: 10px; display: flex; flex-direction: column; }
-  .stats b { font-size: 20px; }
-  .good { color: #2e7d32; } .bad { color: #c62828; }
+  summary { cursor: pointer; color: var(--a); font-weight: 600; }
+  .alert { background: rgba(255,193,7,.2); border-radius: 14px; padding: 10px 12px; margin: 8px 0; color: var(--ink); }
+  .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-bottom: 10px; }
+  .stats div { background: var(--pale); padding: 12px; border-radius: 16px; display: flex; flex-direction: column; }
+  .stats b { font-size: 20px; margin-top: 2px; }
+  .good { color: #1e9a46; } .bad { color: #e0453a; }
   table { width: 100%; border-collapse: collapse; }
-  td, th { padding: 8px; border-bottom: 1px solid #eee; text-align: left; }
-  tr.owned td { color: #999; }
+  td, th { padding: 9px; border-bottom: 1px solid var(--line); text-align: left; }
+  tr.owned td { color: var(--muted); }
   tr.owned td:nth-child(2) { text-decoration: line-through; }
-  .thumb { position: relative; width: 80px; height: 60px; min-width: 80px; border-radius: 8px; background: #e8f5e9; display: flex; align-items: center; justify-content: center; font-size: 30px; overflow: hidden; flex-shrink: 0; }
+  .thumb { position: relative; width: 84px; height: 62px; min-width: 84px; border-radius: 12px; background: var(--pale); display: flex; align-items: center; justify-content: center; font-size: 30px; overflow: hidden; flex-shrink: 0; }
   .thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  @media print { header, .steps, .nav, button, input[type=checkbox] { display: none; } }
+  .fridge-input { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .fridge-input input[type=number] { width: 110px; }
+  .have { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+  .have span { background: var(--pale); color: var(--ink); border-radius: 999px; padding: 6px 10px; font-size: 14px; display: flex; gap: 6px; align-items: center; }
+  .have button { background: none; color: var(--ink); padding: 0 2px; font-size: 16px; line-height: 1; }
+  .quick button { background: var(--tile); color: var(--a); border: 1px solid var(--line); padding: 6px 10px; font-size: 13px; margin: 3px; }
+  .dish-card { display: flex; gap: 12px; align-items: center; background: var(--tile); border-radius: 18px; padding: 10px; margin-bottom: 8px; }
+  .dish-card .info { flex: 1; min-width: 0; }
+  .ings { list-style: none; padding: 0; margin: 6px 0; font-size: 14px; }
+  .ings .ok { color: #1e7a36; } .ings .no { color: #b3261e; }
+  [data-theme=dark] .ings .ok { color: #6fd58e; } [data-theme=dark] .ings .no { color: #ff8a80; }
+  .opt { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+  .sw { width: 34px; height: 34px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; }
+  .sw.on { border-color: var(--ink); }
+  @media print { .seg, .steps, .nav, button, input[type=checkbox], .bg { display: none; } }
 </style>
 </head>
 <body>
-<header>
-  <h1>🥗 Food Planer</h1>
-  <p>Планируем питание под ваш бюджет</p>
-</header>
-<div class="steps" id="steps"></div>
-<main id="app"></main>
+<div class="wrap">
+  <header>
+    <h1>🥗 Food Planer</h1>
+    <p>Планируем питание под ваш бюджет</p>
+  </header>
+  <div class="seg" id="modes"></div>
+  <div class="steps" id="steps"></div>
+  <main id="app"></main>
+</div>
+<datalist id="ings"></datalist>
 
 <script>
 /* ============ ДАННЫЕ ============ */
-
-// Средние цены по России и Крыму, ₽ за кг (ориентировочно)
-const PRICES = {
-  'Овсяные хлопья':150, 'Молоко':90, 'Банан':120, 'Орехи':1100, 'Яйца':160,
-  'Ветчина':700, 'Помидоры':200, 'Лосось':1400, 'Зелень':600, 'Творог':350,
-  'Крупа манная':100, 'Сметана':250, 'Мука':80, 'Курица':380, 'Гречка':120,
-  'Лук':50, 'Масло растительное':180, 'Сыр':900, 'Хлеб':80, 'Тунец':1000,
-  'Огурец':170, 'Морковь':60, 'Индейка':520, 'Рис':110, 'Говядина':750,
-  'Свёкла':60, 'Капуста':70, 'Картофель':60, 'Фарш говяжий':600, 'Треска':450,
-  'Перец болгарский':250, 'Фасоль':200, 'Макароны':110, 'Свинина':550,
-  'Брокколи':450, 'Минтай':350, 'Мёд':700, 'Яблоко':130, 'Кефир':180,
-  'Печенье':500, 'Сухофрукты':600
-};
-
 const MEALS = { breakfast:'Завтрак', lunch:'Обед', dinner:'Ужин', snack:'Перекус' };
 const DAYS = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
 const DAYS_FULL = ['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
 const DIETS = { any:'Любое', meat:'Только мясо', fish:'Только рыба', mix:'Рыба и мясо', veg:'Вегетарианское' };
 const KCAL = { normal:'Не важно', more:'Больше ккал', less:'Меньше ккал' };
 const PROT = { meat:'🍖 мясо', fish:'🐟 рыба', veg:'🥦 вегетарианское' };
+const SCHEMES = { green:'Зелёный', blue:'Синий', orange:'Оранжевый', purple:'Фиолетовый' };
+const FRUITS = ['🍎','🍌','🍇','🍓','🍊','🥝','🍑','🍉','🍒','🍐','🍋','🥭'];
+const COMMON = ['Курица','Яйца','Рис','Картофель','Лук','Помидоры','Молоко','Сыр','Гречка','Огурец','Лосось','Банан','Творог','Макароны','Морковь','Хлеб','Говядина','Яблоко'];
 
-// Иконка блюда (показывается под фото, пока оно загружается, или если фото нет)
-const ICONS = {
-  1:'🥣', 2:'🍳', 3:'🍳', 4:'🍰', 5:'🥞', 6:'🍗', 7:'🥪', 8:'🍞', 9:'🥞', 10:'🍚',
-  11:'🍲', 12:'🍜', 13:'🍖', 14:'🐟', 15:'🐟', 16:'🥘', 17:'🍝', 18:'🍛', 19:'🍣', 20:'🥩',
-  21:'🥗', 22:'🍳', 23:'🍖', 24:'🥘', 25:'🐟', 26:'🐠', 27:'🐟', 28:'🥘', 29:'🍌', 30:'🥫',
-  31:'🍎', 32:'🍌', 33:'🍯', 34:'🥕', 35:'🧀', 36:'🥜', 37:'🍗', 38:'🥒', 39:'🥛', 40:'🥓'
+// Аллергены: группа -> продукты, которые в неё входят
+const ALLERGENS = {
+  milk:    { name:'Молочное', list:['Молоко','Творог','Сметана','Сыр','Сливки','Кефир','Йогурт'] },
+  egg:     { name:'Яйца', list:['Яйца'] },
+  fish:    { name:'Рыба', list:['Лосось','Тунец','Треска','Минтай'] },
+  seafood: { name:'Морепродукты', list:['Креветки'] },
+  nuts:    { name:'Орехи', list:['Орехи'] },
+  gluten:  { name:'Глютен', list:['Мука','Хлеб','Макароны','Печенье','Крупа манная','Булгур','Овсянка'] },
+  honey:   { name:'Мёд', list:['Мёд'] },
+  citrus:  { name:'Цитрусовые', list:['Апельсин','Мандарин','Лимон'] }
 };
 
-// Ключевые слова на английском для поиска фото каждого блюда
-const KEYWORDS = {
-  1:'oatmeal,banana', 2:'omelette,ham', 3:'omelette,salmon', 4:'cheesecake,casserole', 5:'cheese pancakes',
-  6:'chicken,buckwheat', 7:'sandwich,cheese', 8:'tuna,toast', 9:'crepes,cottage cheese', 10:'rice,turkey',
-  11:'borscht', 12:'chicken noodle soup', 13:'buckwheat,meatballs', 14:'fish soup', 15:'baked fish,rice',
-  16:'bean stew', 17:'carbonara', 18:'pilaf,chicken', 19:'salmon,broccoli', 20:'turkey meatballs,mashed potatoes',
-  21:'chicken salad', 22:'vegetable omelette', 23:'baked pork,potatoes', 24:'cabbage stew,beef', 25:'baked fish,vegetables',
-  26:'salmon,rice', 27:'cod,potatoes', 28:'goulash,buckwheat', 29:'cottage cheese,banana', 30:'tuna,bean salad',
-  31:'apple', 32:'banana,nuts', 33:'cottage cheese,honey', 34:'carrot,cottage cheese', 35:'cheese sandwich',
-  36:'dried fruit,nuts', 37:'grilled chicken breast', 38:'tuna,cucumber', 39:'kefir,cookies', 40:'ham roll,cheese'
+// Средние цены, ₽ за кг. Основной источник — файл prices.json, эти значения — запасные.
+const DEFAULT_PRICES = {
+  'Овсянка':150,'Молоко':90,'Банан':120,'Орехи':1100,'Яйца':160,'Ветчина':700,'Помидоры':200,'Лосось':1400,
+  'Зелень':600,'Творог':350,'Крупа манная':100,'Сметана':250,'Мука':80,'Курица':380,'Гречка':120,'Лук':50,
+  'Масло растительное':180,'Сыр':900,'Хлеб':80,'Тунец':1000,'Огурец':170,'Морковь':60,'Индейка':520,'Рис':110,
+  'Говядина':750,'Свёкла':60,'Капуста':70,'Картофель':60,'Фарш говяжий':600,'Треска':450,'Перец болгарский':250,
+  'Фасоль':200,'Макароны':110,'Свинина':550,'Брокколи':450,'Минтай':350,'Мёд':700,'Яблоко':130,'Кефир':180,
+  'Печенье':500,'Сухофрукты':600,'Йогурт':250,'Авокадо':600,'Креветки':900,'Чеснок':400,'Булгур':200,
+  'Кабачок':120,'Тыква':100,'Шпинат':400,'Сливки':400,'Чай чёрный':1500,'Груша':180,'Апельсин':160,
+  'Мандарин':200,'Виноград':250,'Клубника':500,'Киви':300,'Ягоды':400,'Лимон':300
 };
+let PRICES = { ...DEFAULT_PRICES };
+let priceSource = 'встроенные';
 
-// Свои ссылки на фото (необязательно). Если указано, используется вместо автоподбора.
-// Пример: 11: 'https://upload.wikimedia.org/.../borscht.jpg',
-const PHOTOS = {};
-
-// Адрес фото: свой (из PHOTOS) или автоматический подбор по ключевым словам
-function photoUrl(d) {
-  if (PHOTOS[d.id]) return PHOTOS[d.id];
-  return `https://loremflickr.com/320/240/${encodeURI(KEYWORDS[d.id])}?lock=${d.id}`;
-}
-
-// Миниатюра блюда: иконка, а поверх неё фото (если загрузилось)
-function thumb(d) {
-  return `<div class="thumb"><span>${ICONS[d.id]}</span><img src="${photoUrl(d)}" alt="${d.name}" loading="lazy" onerror="this.remove()"></div>`;
-}
-
+/* Блюда. Поля: n — название, m — приём пищи, t — тип белка (meat/fish/veg),
+   k — ккал, b/f/c — белки/жиры/углеводы (г) на порцию (ориентировочно),
+   i — иконка, kw — ключевые слова для фото, g — [продукт, граммов на 1 чел.], s — рецепт */
 const DISHES = [
-  {id:1, name:'Овсянка с бананом и орехами', meal:'breakfast', prot:'veg', kcal:380, ing:[['Овсяные хлопья',60],['Молоко',200],['Банан',100],['Орехи',15]], steps:'Залить хлопья горячим молоком, варить 5 минут на слабом огне, помешивая. Нарезать банан и добавить с орехами перед подачей.'},
-  {id:2, name:'Омлет с ветчиной и помидорами', meal:'breakfast', prot:'meat', kcal:350, ing:[['Яйца',120],['Молоко',50],['Ветчина',60],['Помидоры',50]], steps:'Взбить яйца с молоком, добавить нарезанную ветчину и помидоры. Жарить под крышкой 5–7 минут на среднем огне.'},
-  {id:3, name:'Омлет с лососем и зеленью', meal:'breakfast', prot:'fish', kcal:340, ing:[['Яйца',120],['Молоко',50],['Лосось',60],['Зелень',10]], steps:'Взбить яйца с молоком, выложить мелко нарезанный лосось. Жарить под крышкой 5 минут, посыпать зеленью.'},
-  {id:4, name:'Творожная запеканка', meal:'breakfast', prot:'veg', kcal:390, ing:[['Творог',200],['Яйца',60],['Крупа манная',20],['Сметана',30]], steps:'Смешать творог, яйца, манку и сметану. Выложить в форму, запекать 25 минут при 180°C.'},
-  {id:5, name:'Сырники', meal:'breakfast', prot:'veg', kcal:420, ing:[['Творог',200],['Яйца',60],['Мука',30],['Сметана',30]], steps:'Смешать творог с яйцом и мукой, сформовать сырники. Обжарить на масле по 3–4 минуты с каждой стороны. Подавать со сметаной.'},
-  {id:6, name:'Гречка с курицей', meal:'breakfast', prot:'meat', kcal:420, ing:[['Гречка',80],['Курица',120],['Лук',20],['Масло растительное',5]], steps:'Отварить гречку. Нарезать курицу и лук, обжарить до готовности и смешать с гречкой.'},
-  {id:7, name:'Бутерброд с сыром и яйцом', meal:'breakfast', prot:'veg', kcal:350, ing:[['Хлеб',80],['Сыр',30],['Яйца',60],['Помидоры',50]], steps:'Поджарить хлеб, выложить сыр, сваренное вкрутую яйцо и помидор.'},
-  {id:8, name:'Тост с тунцом и огурцом', meal:'breakfast', prot:'fish', kcal:380, ing:[['Хлеб',80],['Тунец',80],['Яйца',60],['Огурец',50]], steps:'Растереть тунец с половиной яйца, намазать на тост. Сверху огурец и половинки яйца.'},
-  {id:9, name:'Блинчики с творогом', meal:'breakfast', prot:'veg', kcal:400, ing:[['Мука',60],['Молоко',150],['Яйца',60],['Творог',120]], steps:'Смешать муку, молоко и яйцо, испечь тонкие блины. Творог растереть, завернуть в блины.'},
-  {id:10, name:'Рис с индейкой', meal:'breakfast', prot:'meat', kcal:450, ing:[['Рис',80],['Индейка',120],['Морковь',30],['Масло растительное',5]], steps:'Отварить рис. Обжарить индейку с морковью и смешать с рисом.'},
+  {id:1,n:'Овсянка с бананом и орехами',m:'breakfast',t:'veg',k:380,b:12,f:12,c:58,i:'🥣',kw:'oatmeal,banana',g:[['Овсянка',60],['Молоко',200],['Банан',100],['Орехи',15]],s:'Сварить овсянку на молоке 5 минут, помешивая. Добавить нарезанный банан и орехи.'},
+  {id:2,n:'Омлет с ветчиной и помидорами',m:'breakfast',t:'meat',k:350,b:25,f:25,c:6,i:'🍳',kw:'omelette,ham',g:[['Яйца',120],['Молоко',50],['Ветчина',60],['Помидоры',50]],s:'Взбить яйца с молоком, добавить ветчину и помидоры. Жарить под крышкой 5–7 минут.'},
+  {id:3,n:'Омлет с лососем и зеленью',m:'breakfast',t:'fish',k:340,b:26,f:24,c:3,i:'🍳',kw:'omelette,salmon',g:[['Яйца',120],['Молоко',50],['Лосось',60],['Зелень',10]],s:'Взбить яйца с молоком, выложить мелко нарезанный лосось. Жарить 5 минут, посыпать зеленью.'},
+  {id:4,n:'Творожная запеканка',m:'breakfast',t:'veg',k:390,b:30,f:16,c:30,i:'🍰',kw:'cheesecake,casserole',g:[['Творог',200],['Яйца',60],['Крупа манная',20],['Сметана',30]],s:'Смешать творог, яйца, манку и сметану. Запекать 25 минут при 180°C.'},
+  {id:5,n:'Сырники',m:'breakfast',t:'veg',k:420,b:25,f:18,c:40,i:'🥞',kw:'cheese pancakes',g:[['Творог',200],['Яйца',60],['Мука',30],['Сметана',30]],s:'Смешать творог с яйцом и мукой, обжарить сырники по 3–4 минуты с каждой стороны. Подать со сметаной.'},
+  {id:6,n:'Гречка с курицей',m:'breakfast',t:'meat',k:420,b:38,f:14,c:42,i:'🍗',kw:'chicken,buckwheat',g:[['Гречка',80],['Курица',120],['Лук',20],['Масло растительное',5]],s:'Отварить гречку. Обжарить курицу с луком и смешать с гречкой.'},
+  {id:7,n:'Бутерброд с сыром и яйцом',m:'breakfast',t:'veg',k:350,b:18,f:16,c:30,i:'🥪',kw:'sandwich,cheese',g:[['Хлеб',80],['Сыр',30],['Яйца',60],['Помидоры',50]],s:'Поджарить хлеб, выложить сыр, сваренное яйцо и помидор.'},
+  {id:8,n:'Тост с тунцом и огурцом',m:'breakfast',t:'fish',k:380,b:28,f:14,c:33,i:'🍞',kw:'tuna,toast',g:[['Хлеб',80],['Тунец',80],['Яйца',60],['Огурец',50]],s:'Растереть тунец с половиной яйца, намазать на тост. Сверху огурец и половинки яйца.'},
+  {id:9,n:'Блинчики с творогом',m:'breakfast',t:'veg',k:400,b:25,f:16,c:40,i:'🥞',kw:'crepes,cottage cheese',g:[['Мука',60],['Молоко',150],['Яйца',60],['Творог',120]],s:'Испечь тонкие блины, завернуть в них творог.'},
+  {id:10,n:'Рис с индейкой',m:'breakfast',t:'meat',k:450,b:35,f:12,c:52,i:'🍚',kw:'rice,turkey',g:[['Рис',80],['Индейка',120],['Морковь',30],['Масло растительное',5]],s:'Отварить рис. Обжарить индейку с морковью и смешать с рисом.'},
+  {id:11,n:'Йогурт с бананом и овсянкой',m:'breakfast',t:'veg',k:300,b:12,f:8,c:48,i:'🍌',kw:'yogurt,banana',g:[['Йогурт',200],['Банан',100],['Овсянка',30],['Мёд',10]],s:'Смешать йогурт с бананом и овсянкой, добавить мёд.'},
+  {id:12,n:'Тост с авокадо и яйцом',m:'breakfast',t:'veg',k:380,b:12,f:22,c:32,i:'🥑',kw:'avocado toast',g:[['Хлеб',80],['Авокадо',80],['Яйца',60],['Помидоры',40]],s:'Размять авокадо на поджаренном хлебе, сверху выложить яйцо и помидор.'},
 
-  {id:11, name:'Борщ с говядиной', meal:'lunch', prot:'meat', kcal:480, ing:[['Говядина',150],['Свёкла',100],['Капуста',80],['Картофель',100],['Морковь',30],['Лук',30]], steps:'Сварить бульон из говядины около 1,5 часа. Добавить картофель и капусту, затем обжаренные свёклу, морковь и лук. Варить до готовности, подавать со сметаной.'},
-  {id:12, name:'Куриный суп с лапшой', meal:'lunch', prot:'meat', kcal:350, ing:[['Курица',150],['Макароны',60],['Морковь',40],['Лук',30],['Картофель',100]], steps:'Сварить бульон из курицы, добавить картофель, затем морковь и лук. В конце всыпать макароны и варить 8 минут.'},
-  {id:13, name:'Гречка с говяжьими котлетами', meal:'lunch', prot:'meat', kcal:550, ing:[['Гречка',80],['Фарш говяжий',120],['Лук',20],['Яйца',30],['Масло растительное',5]], steps:'Смешать фарш с мелко нарезанным луком и яйцом, сформовать котлеты. Обжарить по 4 минуты с каждой стороны. Подать с гречкой.'},
-  {id:14, name:'Рыбный суп из трески', meal:'lunch', prot:'fish', kcal:380, ing:[['Треска',180],['Картофель',120],['Морковь',40],['Лук',30]], steps:'Вскипятить воду, добавить картофель. Через 10 минут положить треску кусками, морковь и лук. Варить ещё 10 минут.'},
-  {id:15, name:'Треска, запечённая с рисом', meal:'lunch', prot:'fish', kcal:430, ing:[['Треска',180],['Рис',80],['Перец болгарский',50],['Помидоры',50]], steps:'Рис отварить. Треску посолить, выложить с нарезанными перцем и помидорами. Запекать при 200°C 20 минут. Подать с рисом.'},
-  {id:16, name:'Овощное рагу с фасолью', meal:'lunch', prot:'veg', kcal:360, ing:[['Фасоль',100],['Картофель',150],['Морковь',50],['Лук',40],['Помидоры',80]], steps:'Обжарить лук и морковь, добавить нарезанный картофель и помидоры, затем фасоль. Тушить 25 минут под крышкой.'},
-  {id:17, name:'Паста карбонара', meal:'lunch', prot:'meat', kcal:620, ing:[['Макароны',100],['Свинина',100],['Яйца',60],['Сыр',30],['Сметана',50]], steps:'Сварить макароны. Обжарить нарезанную свинину до хрустящей корочки. Смешать яйца, тёртый сыр и сметану, соединить с горячей пастой и мясом вне огня.'},
-  {id:18, name:'Плов с курицей', meal:'lunch', prot:'meat', kcal:580, ing:[['Рис',100],['Курица',150],['Морковь',60],['Лук',40],['Масло растительное',15]], steps:'Обжарить лук, морковь и курицу в масле. Добавить промытый рис, залить водой на 1 см выше уровня. Тушить 25 минут под крышкой.'},
-  {id:19, name:'Лосось с гречкой и брокколи', meal:'lunch', prot:'fish', kcal:520, ing:[['Лосось',150],['Гречка',80],['Брокколи',100],['Масло растительное',5]], steps:'Отварить гречку и брокколи. Лосось запечь при 200°C 15 минут, подать с гарниром.'},
-  {id:20, name:'Тефтели из индейки с пюре', meal:'lunch', prot:'meat', kcal:450, ing:[['Индейка',150],['Картофель',200],['Молоко',50],['Лук',20]], steps:'Фарш с мелко нарезанным луком и солью сформовать в тефтели, тушить в воде 20 минут. Картофель отварить и растереть с горячим молоком.'},
+  {id:13,n:'Борщ с говядиной',m:'lunch',t:'meat',k:480,b:28,f:22,c:45,i:'🍲',kw:'borscht',g:[['Говядина',150],['Свёкла',100],['Капуста',80],['Картофель',100],['Морковь',30],['Лук',30]],s:'Сварить бульон из говядины около 1,5 часа. Добавить картофель и капусту, затем обжаренные свёклу, морковь и лук.'},
+  {id:14,n:'Куриный суп с лапшой',m:'lunch',t:'meat',k:350,b:28,f:12,c:32,i:'🍜',kw:'chicken noodle soup',g:[['Курица',150],['Макароны',60],['Морковь',40],['Лук',30],['Картофель',100]],s:'Сварить бульон из курицы, добавить картофель, морковь и лук. В конце добавить макароны и варить 8 минут.'},
+  {id:15,n:'Гречка с говяжьими котлетами',m:'lunch',t:'meat',k:550,b:35,f:30,c:40,i:'🍖',kw:'buckwheat,meatballs',g:[['Гречка',80],['Фарш говяжий',120],['Лук',20],['Яйца',30],['Масло растительное',5]],s:'Смешать фарш с луком и яйцом, сформовать котлеты, обжарить по 4 минуты с каждой стороны. Подать с гречкой.'},
+  {id:16,n:'Рыбный суп из трески',m:'lunch',t:'fish',k:380,b:40,f:8,c:35,i:'🐟',kw:'fish soup',g:[['Треска',180],['Картофель',120],['Морковь',40],['Лук',30]],s:'Варить картофель 10 минут, затем добавить треску, морковь и лук. Варить ещё 10 минут.'},
+  {id:17,n:'Треска, запечённая с рисом',m:'lunch',t:'fish',k:430,b:40,f:8,c:48,i:'🐟',kw:'baked fish,rice',g:[['Треска',180],['Рис',80],['Перец болгарский',50],['Помидоры',50]],s:'Треску посолить, выложить с перцем и помидорами, запечь при 200°C 20 минут. Подать с рисом.'},
+  {id:18,n:'Овощное рагу с фасолью',m:'lunch',t:'veg',k:360,b:14,f:10,c:55,i:'🥘',kw:'bean stew',g:[['Фасоль',100],['Картофель',150],['Морковь',50],['Лук',40],['Помидоры',80]],s:'Обжарить лук и морковь, добавить картофель и помидоры, затем фасоль. Тушить 25 минут под крышкой.'},
+  {id:19,n:'Паста карбонара',m:'lunch',t:'meat',k:620,b:30,f:38,c:40,i:'🍝',kw:'carbonara',g:[['Макароны',100],['Свинина',100],['Яйца',60],['Сыр',30],['Сметана',50]],s:'Сварить макароны, обжарить свинину. Смешать яйца, тёртый сыр и сметану, соединить с пастой вне огня.'},
+  {id:20,n:'Плов с курицей',m:'lunch',t:'meat',k:580,b:35,f:22,c:62,i:'🍛',kw:'pilaf,chicken',g:[['Рис',100],['Курица',150],['Морковь',60],['Лук',40],['Масло растительное',15]],s:'Обжарить лук, морковь и курицу, добавить рис и воду на 1 см выше. Тушить 25 минут под крышкой.'},
+  {id:21,n:'Лосось с гречкой и брокколи',m:'lunch',t:'fish',k:520,b:40,f:20,c:45,i:'🍣',kw:'salmon,broccoli',g:[['Лосось',150],['Гречка',80],['Брокколи',100],['Масло растительное',5]],s:'Отварить гречку и брокколи. Лосось запечь при 200°C 15 минут.'},
+  {id:22,n:'Тефтели из индейки с пюре',m:'lunch',t:'meat',k:450,b:35,f:14,c:45,i:'🥩',kw:'turkey meatballs,mashed potatoes',g:[['Индейка',150],['Картофель',200],['Молоко',50],['Лук',20]],s:'Сформовать тефтели из фарша с луком, тушить 20 минут. Картофель отварить и размять с тёплым молоком.'},
+  {id:23,n:'Креветки с рисом и чесноком',m:'lunch',t:'fish',k:480,b:35,f:6,c:65,i:'🦐',kw:'shrimp,rice',g:[['Креветки',150],['Рис',80],['Чеснок',5],['Масло растительное',10]],s:'Отварить рис. Обжарить креветки с чесноком на масле 3 минуты, подать с рисом.'},
+  {id:24,n:'Булгур с курицей и овощами',m:'lunch',t:'meat',k:470,b:38,f:14,c:48,i:'🥗',kw:'bulgur,chicken,vegetables',g:[['Булгур',80],['Курица',120],['Кабачок',100],['Морковь',40],['Масло растительное',10]],s:'Залить булгур кипятком на 15 минут. Обжарить курицу с кабачком и морковью, смешать с булгуром.'},
 
-  {id:21, name:'Салат с курицей и овощами', meal:'dinner', prot:'meat', kcal:320, ing:[['Курица',150],['Огурец',100],['Помидоры',100],['Сметана',30]], steps:'Отварить курицу и нарезать. Смешать с овощами, заправить сметаной.'},
-  {id:22, name:'Омлет с овощами', meal:'dinner', prot:'veg', kcal:330, ing:[['Яйца',180],['Помидоры',80],['Перец болгарский',60],['Молоко',50]], steps:'Нарезать овощи и обжарить 3 минуты. Залить взбитыми с молоком яйцами, готовить под крышкой 5 минут.'},
-  {id:23, name:'Свинина, запечённая с картофелем', meal:'dinner', prot:'meat', kcal:560, ing:[['Свинина',150],['Картофель',200],['Лук',30],['Масло растительное',10]], steps:'Нарезать свинину и картофель, посолить, перемешать с луком и маслом. Запекать при 200°C 40 минут.'},
-  {id:24, name:'Капуста с говядиной', meal:'dinner', prot:'meat', kcal:420, ing:[['Капуста',200],['Говядина',120],['Морковь',30],['Лук',30]], steps:'Обжарить говядину с луком и морковью, добавить капусту и тушить 40 минут на слабом огне.'},
-  {id:25, name:'Минтай, запечённый с овощами', meal:'dinner', prot:'fish', kcal:320, ing:[['Минтай',180],['Брокколи',100],['Морковь',50],['Масло растительное',5]], steps:'Минтай посолить, выложить с овощами на противень. Запекать при 200°C 20 минут.'},
-  {id:26, name:'Лосось на пару с рисом', meal:'dinner', prot:'fish', kcal:480, ing:[['Лосось',150],['Рис',70],['Зелень',10]], steps:'Приготовить лосось на пару 12 минут. Рис отварить, подать с зеленью.'},
-  {id:27, name:'Треска в сметане с картофелем', meal:'dinner', prot:'fish', kcal:420, ing:[['Треска',150],['Картофель',150],['Сметана',50],['Лук',20]], steps:'Картофель отварить. Треску с луком и сметаной запечь 20 минут при 190°C, подать с картофелем.'},
-  {id:28, name:'Гуляш из говядины с гречкой', meal:'dinner', prot:'meat', kcal:520, ing:[['Говядина',150],['Гречка',80],['Лук',40],['Морковь',40]], steps:'Тушить говядину с луком и морковью 1,5 часа. Гречку отварить, подать с гуляшом.'},
-  {id:29, name:'Творог с бананом и орехами', meal:'dinner', prot:'veg', kcal:280, ing:[['Творог',200],['Банан',100],['Орехи',15]], steps:'Творог смешать с нарезанным бананом, посыпать измельчёнными орехами.'},
-  {id:30, name:'Тунец с фасолью и овощами', meal:'dinner', prot:'fish', kcal:340, ing:[['Тунец',100],['Фасоль',100],['Огурец',80],['Помидоры',80],['Масло растительное',10]], steps:'Слить жидкость из банки, смешать тунец с фасолью, нарезанными овощами и маслом.'},
+  {id:25,n:'Салат с курицей и овощами',m:'dinner',t:'meat',k:320,b:30,f:12,c:18,i:'🥗',kw:'chicken salad',g:[['Курица',150],['Огурец',100],['Помидоры',100],['Сметана',30]],s:'Отварить курицу и нарезать. Смешать с овощами и заправить сметаной.'},
+  {id:26,n:'Омлет с овощами',m:'dinner',t:'veg',k:330,b:22,f:22,c:10,i:'🍳',kw:'vegetable omelette',g:[['Яйца',180],['Помидоры',80],['Перец болгарский',60],['Молоко',50]],s:'Обжарить овощи 3 минуты, залить взбитыми с молоком яйцами, готовить под крышкой 5 минут.'},
+  {id:27,n:'Свинина, запечённая с картофелем',m:'dinner',t:'meat',k:560,b:35,f:32,c:30,i:'🍖',kw:'baked pork,potatoes',g:[['Свинина',150],['Картофель',200],['Лук',30],['Масло растительное',10]],s:'Нарезать свинину и картофель, посолить, смешать с луком и маслом. Запекать при 200°C 40 минут.'},
+  {id:28,n:'Капуста с говядиной',m:'dinner',t:'meat',k:420,b:30,f:22,c:22,i:'🥘',kw:'cabbage stew,beef',g:[['Капуста',200],['Говядина',120],['Морковь',30],['Лук',30]],s:'Обжарить говядину с луком и морковью, добавить капусту и тушить 40 минут.'},
+  {id:29,n:'Минтай, запечённый с овощами',m:'dinner',t:'fish',k:320,b:38,f:5,c:25,i:'🐟',kw:'baked fish,vegetables',g:[['Минтай',180],['Брокколи',100],['Морковь',50],['Масло растительное',5]],s:'Минтай посолить, выложить с овощами на противень, запечь при 200°C 20 минут.'},
+  {id:30,n:'Лосось на пару с рисом',m:'dinner',t:'fish',k:480,b:38,f:16,c:40,i:'🐠',kw:'salmon,rice',g:[['Лосось',150],['Рис',70],['Зелень',10]],s:'Приготовить лосось на пару 12 минут. Рис отварить, подать с зеленью.'},
+  {id:31,n:'Треска в сметане с картофелем',m:'dinner',t:'fish',k:420,b:35,f:14,c:36,i:'🐟',kw:'cod,potatoes',g:[['Треска',150],['Картофель',150],['Сметана',50],['Лук',20]],s:'Отварить картофель. Треску с луком и сметаной запечь 20 минут при 190°C.'},
+  {id:32,n:'Гуляш из говядины с гречкой',m:'dinner',t:'meat',k:520,b:38,f:20,c:42,i:'🥘',kw:'goulash,buckwheat',g:[['Говядина',150],['Гречка',80],['Лук',40],['Морковь',40]],s:'Тушить говядину с луком и морковью 1,5 часа. Гречку отварить и подать с гуляшом.'},
+  {id:33,n:'Творог с бананом и орехами',m:'dinner',t:'veg',k:280,b:25,f:10,c:24,i:'🍌',kw:'cottage cheese,banana',g:[['Творог',200],['Банан',100],['Орехи',15]],s:'Смешать творог с бананом, посыпать орехами.'},
+  {id:34,n:'Тунец с фасолью и овощами',m:'dinner',t:'fish',k:340,b:30,f:12,c:28,i:'🥫',kw:'tuna,bean salad',g:[['Тунец',100],['Фасоль',100],['Огурец',80],['Помидоры',80],['Масло растительное',10]],s:'Слить жидкость из банки, смешать тунец с фасолью, овощами и маслом.'},
+  {id:35,n:'Рыбные котлеты из минтая',m:'dinner',t:'fish',k:380,b:38,f:14,c:14,i:'🐟',kw:'fish cutlets',g:[['Минтай',200],['Лук',20],['Яйца',30],['Масло растительное',10]],s:'Измельчить минтай с луком, добавить яйцо, сформовать котлеты и обжарить по 4 минуты с каждой стороны.'},
+  {id:36,n:'Запеканка из кабачков с сыром',m:'dinner',t:'veg',k:340,b:20,f:20,c:18,i:'🥘',kw:'zucchini casserole',g:[['Кабачок',250],['Яйца',60],['Сыр',40],['Сметана',30]],s:'Нарезать кабачок кружочками, залить смесью яиц и сметаны, посыпать сыром. Запекать 30 минут при 190°C.'},
+  {id:37,n:'Тефтели в томате с рисом',m:'dinner',t:'meat',k:480,b:32,f:22,c:40,i:'🍖',kw:'meatballs,rice',g:[['Фарш говяжий',150],['Рис',80],['Помидоры',80],['Лук',20]],s:'Сформовать тефтели из фарша с луком, тушить с помидорами 20 минут. Подать с рисом.'},
+  {id:38,n:'Курица со шпинатом и сливками',m:'dinner',t:'meat',k:400,b:40,f:22,c:8,i:'🥗',kw:'chicken spinach',g:[['Курица',150],['Шпинат',100],['Сливки',50],['Сыр',30]],s:'Обжарить курицу, добавить шпинат и сливки, посыпать сыром и тушить 5 минут.'},
+  {id:39,n:'Тыквенный крем-суп',m:'dinner',t:'veg',k:250,b:6,f:12,c:30,i:'🎃',kw:'pumpkin soup',g:[['Тыква',300],['Лук',30],['Сливки',50],['Масло растительное',10]],s:'Обжарить лук, добавить тыкву и воду, варить 20 минут. Измельчить блендером и влить сливки.'},
 
-  {id:31, name:'Яблоко', meal:'snack', prot:'veg', kcal:95, ing:[['Яблоко',150]], steps:'Вымыть и съесть.'},
-  {id:32, name:'Банан с орехами', meal:'snack', prot:'veg', kcal:200, ing:[['Банан',120],['Орехи',20]], steps:'Нарезать банан и посыпать орехами.'},
-  {id:33, name:'Творожок с мёдом', meal:'snack', prot:'veg', kcal:180, ing:[['Творог',120],['Мёд',15]], steps:'Творог смешать с мёдом.'},
-  {id:34, name:'Морковь с творожным соусом', meal:'snack', prot:'veg', kcal:130, ing:[['Морковь',100],['Творог',80]], steps:'Морковь нарезать палочками, подать с творогом для макания.'},
-  {id:35, name:'Бутерброд с сыром', meal:'snack', prot:'veg', kcal:220, ing:[['Хлеб',50],['Сыр',30],['Помидоры',40]], steps:'Хлеб намазать, сверху сыр и помидор.'},
-  {id:36, name:'Сухофрукты с орехами', meal:'snack', prot:'veg', kcal:240, ing:[['Сухофрукты',50],['Орехи',20]], steps:'Смешать и подать.'},
-  {id:37, name:'Куриная грудка запечённая', meal:'snack', prot:'meat', kcal:180, ing:[['Курица',120]], steps:'Курицу посолить, запечь при 190°C 25 минут.'},
-  {id:38, name:'Тунец с огурцом', meal:'snack', prot:'fish', kcal:160, ing:[['Тунец',80],['Огурец',80]], steps:'Слить тунец, огурец нарезать, смешать.'},
-  {id:39, name:'Кефир с печеньем', meal:'snack', prot:'veg', kcal:200, ing:[['Кефир',250],['Печенье',30]], steps:'Подать кефир с печеньем.'},
-  {id:40, name:'Рулетики из ветчины с сыром', meal:'snack', prot:'meat', kcal:220, ing:[['Ветчина',60],['Сыр',30],['Огурец',50]], steps:'Выложить ветчину, на неё сыр и огурец, свернуть рулетом.'}
+  {id:40,n:'Яблоко',m:'snack',t:'veg',k:95,b:0.5,f:0.3,c:25,i:'🍎',kw:'apple',g:[['Яблоко',150]],s:'Вымыть и съесть.'},
+  {id:41,n:'Банан',m:'snack',t:'veg',k:105,b:1,f:0.4,c:27,i:'🍌',kw:'banana',g:[['Банан',120]],s:'Очистить и съесть.'},
+  {id:42,n:'Груша',m:'snack',t:'veg',k:100,b:0.6,f:0.3,c:25,i:'🍐',kw:'pear',g:[['Груша',150]],s:'Вымыть и съесть.'},
+  {id:43,n:'Апельсин',m:'snack',t:'veg',k:70,b:1,f:0.2,c:17,i:'🍊',kw:'orange fruit',g:[['Апельсин',150]],s:'Очистить и разделить на дольки.'},
+  {id:44,n:'Мандарины',m:'snack',t:'veg',k:80,b:1,f:0.4,c:18,i:'🍊',kw:'tangerines',g:[['Мандарин',200]],s:'Очистить и подать.'},
+  {id:45,n:'Виноград',m:'snack',t:'veg',k:100,b:1,f:0.5,c:25,i:'🍇',kw:'grapes',g:[['Виноград',150]],s:'Вымыть и подать охлаждённым.'},
+  {id:46,n:'Клубника со сливками',m:'snack',t:'veg',k:150,b:1.5,f:8,c:15,i:'🍓',kw:'strawberries',g:[['Клубника',150],['Сливки',30]],s:'Нарезать клубнику и полить сливками.'},
+  {id:47,n:'Киви с йогуртом',m:'snack',t:'veg',k:140,b:5,f:3,c:22,i:'🥝',kw:'kiwi yogurt',g:[['Киви',100],['Йогурт',100]],s:'Нарезать киви и добавить йогурт.'},
+  {id:48,n:'Чай с печеньем',m:'snack',t:'veg',k:180,b:3,f:6,c:28,i:'🍵',kw:'tea cookies',g:[['Чай чёрный',3],['Печенье',40]],s:'Заварить чай 3–5 минут, подать с печеньем.'},
+  {id:49,n:'Чай с мёдом и лимоном',m:'snack',t:'veg',k:70,b:0.2,f:0,c:18,i:'🍋',kw:'tea honey lemon',g:[['Чай чёрный',3],['Мёд',10],['Лимон',20]],s:'Заварить чай, дать остыть до тёплого, добавить мёд и лимон.'},
+  {id:50,n:'Кефир с печеньем',m:'snack',t:'veg',k:200,b:7,f:6,c:28,i:'🥛',kw:'kefir cookies',g:[['Кефир',250],['Печенье',30]],s:'Подать кефир с печеньем.'},
+  {id:51,n:'Творожок с мёдом',m:'snack',t:'veg',k:180,b:16,f:5,c:20,i:'🍯',kw:'cottage cheese honey',g:[['Творог',120],['Мёд',15]],s:'Смешать творог с мёдом.'},
+  {id:52,n:'Ягоды с йогуртом',m:'snack',t:'veg',k:150,b:6,f:3,c:25,i:'🍒',kw:'berries yogurt',g:[['Ягоды',150],['Йогурт',100]],s:'Смешать ягоды с йогуртом.'},
+  {id:53,n:'Сухофрукты с орехами',m:'snack',t:'veg',k:240,b:6,f:12,c:30,i:'🥜',kw:'dried fruit nuts',g:[['Сухофрукты',50],['Орехи',20]],s:'Смешать и подать.'},
+  {id:54,n:'Морковь с творогом',m:'snack',t:'veg',k:130,b:10,f:4,c:12,i:'🥕',kw:'carrot cottage cheese',g:[['Морковь',100],['Творог',80]],s:'Морковь нарезать палочками и подать с творогом.'},
+  {id:55,n:'Яблоко с сыром',m:'snack',t:'veg',k:150,b:7,f:9,c:12,i:'🧀',kw:'apple cheese',g:[['Яблоко',120],['Сыр',30]],s:'Нарезать яблоко дольками и подать с сыром.'}
 ];
 
 /* ============ СОСТОЯНИЕ ============ */
-const state = {
-  step: 1,
-  budget: 5000,
-  persons: 2,
-  days: [...DAYS],
-  snacks: 1,
-  diet: 'any',
-  kcal: 'normal',
-  selected: {},
-  plan: null,
-  warnings: [],
-  owned: {}
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 };
 
-/* ============ ХЕЛПЕРЫ ============ */
+const state = {
+  mode: 'plan', step: 1,
+  budget: 5000, persons: 2, days: [...DAYS], snacks: 1, diet: 'any', kcal: 'normal',
+  selected: {}, plan: null, warnings: [], owned: {},
+  have: LS.get('fp-stock', {}),                                  // {продукт: граммы}
+  block: LS.get('fp-block', { allergens: [], dislikes: '' }),    // ограничения
+  history: LS.get('fp-history', []),
+  theme: LS.get('fp-theme', 'light'),
+  scheme: LS.get('fp-scheme', 'green'),
+  fMeal: 'all'
+};
+
 const app = document.getElementById('app');
 const stepsEl = document.getElementById('steps');
+const modesEl = document.getElementById('modes');
 const STEP_NAMES = ['Бюджет','Персоны','Дни','Питание','Блюда','Меню','Итог'];
 
+/* ============ ХЕЛПЕРЫ ============ */
 const dish = id => DISHES.find(d => d.id === id);
 const fmt = n => Math.round(n).toLocaleString('ru-RU') + ' ₽';
-const fmtG = g => g >= 1000 ? (g/1000).toLocaleString('ru-RU',{maximumFractionDigits:2}) + ' кг' : Math.round(g) + ' г';
+const fmtG = g => g >= 1000 ? (g/1000).toLocaleString('ru-RU', {maximumFractionDigits:2}) + ' кг' : Math.round(g) + ' г';
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-const dishCost = d => d.ing.reduce((s,[n,g]) => s + g/1000 * PRICES[n], 0);
+const norm = s => s.toLowerCase().replace(/ё/g, 'е').trim();
+const stem = s => norm(s).slice(0, 3);   // «курица» = «курицу», «яйцо» = «яйца»
+const canon = v => Object.keys(PRICES).find(k => stem(k) === stem(v)) || (v.charAt(0).toUpperCase() + v.slice(1));
+const dishCost = d => d.g.reduce((s, [n, g]) => s + g/1000 * (PRICES[n] || 0), 0);
 const dishCostTotal = d => dishCost(d) * state.persons;
-const radios = (name, obj, cur) => Object.entries(obj).map(([k,v]) =>
+const radios = (name, obj, cur) => Object.entries(obj).map(([k, v]) =>
   `<label class="chip"><input type="radio" name="${name}" value="${k}" ${cur===k?'checked':''} onchange="state.${name}=this.value"><span>${v}</span></label>`
 ).join('');
 
+// Ограничения: аллергены и нелюбимые продукты
+const blockedNames = () => state.block.dislikes.split(',').map(s => s.trim()).filter(Boolean);
+function blockedIng(name) {
+  if (blockedNames().some(x => stem(x) === stem(name))) return true;
+  return state.block.allergens.some(a => ALLERGENS[a].list.includes(name));
+}
+const dishBlocked = d => d.g.some(([n]) => blockedIng(n));
+
 function dietOk(d, diet) {
   if (diet === 'any')  return true;
-  if (diet === 'meat') return d.prot === 'meat';
-  if (diet === 'fish') return d.prot === 'fish';
-  if (diet === 'mix')  return d.prot === 'meat' || d.prot === 'fish';
-  if (diet === 'veg')  return d.prot === 'veg';
+  if (diet === 'meat') return d.t === 'meat';
+  if (diet === 'fish') return d.t === 'fish';
+  if (diet === 'mix')  return d.t === 'meat' || d.t === 'fish';
+  if (diet === 'veg')  return d.t === 'veg';
   return true;
 }
 
+/* ============ ЦЕНЫ ИЗ ФАЙЛА ============ */
+async function loadPrices() {
+  try {
+    const r = await fetch('prices.json', { cache: 'no-cache' });
+    if (!r.ok) throw new Error(r.status);
+    PRICES = { ...DEFAULT_PRICES, ...(await r.json()) };
+    priceSource = 'файл prices.json';
+  } catch (e) {
+    priceSource = 'встроенные (файл prices.json не найден или открыт без сервера)';
+  }
+  updateDatalist();
+  render();
+}
+function updateDatalist() {
+  document.getElementById('ings').innerHTML = Object.keys(PRICES).map(k => `<option value="${k}">`).join('');
+}
+
+/* ============ КОЛИЧЕСТВО ПРОДУКТОВ ============ */
+const findHave = name => Object.keys(state.have).find(h => stem(h) === stem(name));
+const haveAmt = name => { const k = findHave(name); return k ? state.have[k] : 0; };
+function setHave(name, g) {
+  const old = findHave(name);
+  if (old) delete state.have[old];
+  state.have[canon(name)] = g;
+  LS.set('fp-stock', state.have);
+  render();
+  setTimeout(() => document.getElementById('hInp')?.focus(), 0);
+}
+function addHave() {
+  const n = document.getElementById('hInp').value.trim();
+  const g = +document.getElementById('gInp').value;
+  if (!n || !(g > 0)) return;
+  setHave(n, g);
+}
+function removeHave(n) { delete state.have[n]; LS.set('fp-stock', state.have); render(); }
+function clearHave() { state.have = {}; LS.set('fp-stock', state.have); render(); }
+// Сколько не хватает для блюда (на текущее число персон)
+function dishStatus(d) {
+  const miss = [];
+  d.g.forEach(([n, g]) => {
+    const need = g * state.persons, have = haveAmt(n);
+    if (have < need) miss.push({ n, need, have, lack: need - have });
+  });
+  return miss;
+}
+
+/* ============ ГЕНЕРАЦИЯ ПЛАНА ============ */
 function getPool(type) {
   const warns = [];
-  let base = DISHES.filter(d => d.meal === type && state.selected[d.id] !== false);
-  if (!base.length) {
-    base = DISHES.filter(d => d.meal === type);
-    warns.push(`В категории «${MEALS[type]}» не выбрано ни одного блюда — использованы все варианты.`);
-  }
+  const all = DISHES.filter(d => d.m === type && !dishBlocked(d));
+  if (!all.length) return { list: [], warns };
+  let base = all.filter(d => state.selected[d.id] !== false);
+  if (!base.length) { base = all; warns.push(`В категории «${MEALS[type]}» не выбрано ни одного блюда — использованы все доступные.`); }
   let p = base.filter(d => dietOk(d, state.diet));
-  if (!p.length) {
-    p = base;
-    warns.push(`Для режима «${DIETS[state.diet]}» нет подходящих блюд в категории «${MEALS[type]}» — показаны остальные.`);
-  }
+  if (!p.length) { p = base; warns.push(`Для режима «${DIETS[state.diet]}» нет подходящих блюд в категории «${MEALS[type]}» — показаны остальные.`); }
   if (state.kcal !== 'normal' && p.length > 2) {
-    const s = [...p].sort((a,b) => a.kcal - b.kcal);
+    const s = [...p].sort((a, b) => a.k - b.k);
     const half = Math.ceil(s.length / 2);
     p = state.kcal === 'more' ? s.slice(half) : s.slice(0, half);
   }
   return { list: p, warns };
 }
 
-/* ============ ГЕНЕРАЦИЯ ПЛАНА ============ */
 function totalCost() {
-  return state.plan.reduce((s, d) =>
-    s + d.meals.reduce((a, m) => a + dishCostTotal(dish(m.dishId)), 0), 0);
+  return state.plan.reduce((s, d) => s + d.meals.reduce((a, m) => a + dishCostTotal(dish(m.dishId)), 0), 0);
 }
 
 function balanceBudget(pools) {
@@ -240,58 +342,199 @@ function balanceBudget(pools) {
       if (alt.length && (!best || cur > best.cur)) best = { m, cur, alt };
     }));
     if (!best) break;
-    best.m.dishId = best.alt.reduce((a,b) => dishCostTotal(b) < dishCostTotal(a) ? b : a).id;
+    best.m.dishId = best.alt.reduce((a, b) => dishCostTotal(b) < dishCostTotal(a) ? b : a).id;
   }
 }
 
 function generatePlan() {
   state.warnings = [];
   const pools = {};
-  ['breakfast','lunch','dinner','snack'].forEach(t => {
+  for (const t of ['breakfast','lunch','dinner','snack']) {
     const r = getPool(t);
     pools[t] = r.list;
     r.warns.forEach(w => { if (!state.warnings.includes(w)) state.warnings.push(w); });
-  });
-
+    if (!r.list.length) return false;
+  }
   state.plan = state.days.map(day => {
     const meals = [];
-    ['breakfast','lunch','dinner'].forEach(t => meals.push({ type:t, dishId: pick(pools[t]).id }));
-    for (let i = 0; i < state.snacks; i++) meals.push({ type:'snack', dishId: pick(pools.snack).id });
+    ['breakfast','lunch','dinner'].forEach(t => meals.push({ type: t, dishId: pick(pools[t]).id }));
+    for (let i = 0; i < state.snacks; i++) meals.push({ type: 'snack', dishId: pick(pools.snack).id });
     return { day, meals };
   });
-
   balanceBudget(pools);
-
   if (totalCost() > state.budget) {
     const minPer = t => Math.min(...pools[t].map(dishCostTotal));
-    const minTotal = state.plan.reduce((s,d) =>
-      s + d.meals.reduce((a,m) => a + minPer(m.type), 0), 0);
-    state.warnings.push(`Бюджет слишком мал: минимальная стоимость меню с этими условиями ≈ ${fmt(minTotal)}. Увеличьте бюджет или уберите часть дней/перекусов.`);
+    const minTotal = state.plan.reduce((s, d) => s + d.meals.reduce((a, m) => a + minPer(m.type), 0), 0);
+    state.warnings.push(`Бюджет слишком мал: минимальная стоимость меню ≈ ${fmt(minTotal)}. Увеличьте бюджет или уберите часть дней/перекусов.`);
   }
+  return true;
 }
 
-function toMenu() { generatePlan(); go(6); }
+function saveHistory() {
+  state.history.unshift({
+    date: new Date().toLocaleString('ru-RU', { dateStyle: 'short', timeStyle: 'short' }),
+    persons: state.persons, budget: state.budget, total: Math.round(totalCost()),
+    plan: state.plan.map(d => ({ day: d.day, meals: d.meals.map(m => ({ type: m.type, dishId: m.dishId })) }))
+  });
+  state.history = state.history.slice(0, 20);
+  LS.set('fp-history', state.history);
+}
+
+function toMenu() {
+  if (!generatePlan()) return alert('Ограничения исключили все блюда в одной из категорий. Ослабьте их в «Настройках».');
+  saveHistory();
+  go(6);
+}
 
 function swapDish(di, mi) {
   const m = state.plan[di].meals[mi];
   const others = getPool(m.type).list.filter(d => d.id !== m.dishId);
-  if (!others.length) return alert('Для этой категории нет других блюд. Добавьте варианты на шаге 5.');
+  if (!others.length) return alert('Других блюд в этой категории нет.');
   m.dishId = pick(others).id;
   render();
 }
 
+// Сумма по дню: ккал и КБЖУ на 1 порцию каждого блюда
+const sumDay = (meals) => meals.reduce((s, m) => {
+  const d = dish(m.dishId);
+  return { k: s.k + d.k, b: s.b + d.b, f: s.f + d.f, c: s.c + d.c };
+}, { k: 0, b: 0, f: 0, c: 0 });
+const kbzhu = o => `Б ${Math.round(o.b)} · Ж ${Math.round(o.f)} · У ${Math.round(o.c)}`;
+
 function shoppingList() {
   const map = {};
   state.plan.forEach(d => d.meals.forEach(m =>
-    dish(m.dishId).ing.forEach(([n,g]) => map[n] = (map[n] || 0) + g * state.persons)));
+    dish(m.dishId).g.forEach(([n, g]) => map[n] = (map[n] || 0) + g * state.persons)));
   return Object.entries(map)
-    .map(([name,g]) => ({ name, g, cost: g/1000 * PRICES[name] }))
-    .sort((a,b) => b.cost - a.cost);
+    .map(([name, g]) => ({ name, g, cost: g/1000 * (PRICES[name] || 0) }))
+    .sort((a, b) => b.cost - a.cost);
 }
-
 function toggleOwned(name) { state.owned[name] = !state.owned[name]; render(); }
 
-/* ============ УПРАВЛЕНИЕ ЭКРАНАМИ ============ */
+function shoppingText() {
+  const list = shoppingList().filter(x => !state.owned[x.name]);
+  const total = list.reduce((s, x) => s + x.cost, 0);
+  return `Список покупок (${state.persons} чел., ${state.plan.length} дн.)\n\n` +
+    list.map(x => `- ${x.name}: ${fmtG(x.g)} (${fmt(x.cost)})`).join('\n') +
+    `\n\nИтого к покупке: ${fmt(total)}`;
+}
+function fallbackCopy(t) {
+  const ta = document.createElement('textarea');
+  ta.value = t; document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch (e) {}
+  ta.remove();
+}
+function copyList() {
+  const t = shoppingText();
+  const done = () => alert('Список скопирован');
+  if (navigator.clipboard) navigator.clipboard.writeText(t).then(done).catch(() => { fallbackCopy(t); done(); });
+  else { fallbackCopy(t); done(); }
+}
+function downloadList() {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([shoppingText()], { type: 'text/plain;charset=utf-8' }));
+  a.download = 'spisok-pokupok.txt';
+  a.click();
+}
+function shareList() {
+  if (navigator.share) navigator.share({ title: 'Список покупок', text: shoppingText() }).catch(() => {});
+}
+
+/* ============ ИСТОРИЯ ============ */
+function openHistory(i) {
+  const h = state.history[i];
+  state.persons = h.persons; state.budget = h.budget;
+  state.plan = h.plan.map(d => ({ day: d.day, meals: d.meals.map(m => ({ ...m })) }));
+  state.owned = {};
+  state.mode = 'plan'; state.step = 6;
+  render(); window.scrollTo(0, 0);
+}
+function delHistory(i) {
+  state.history.splice(i, 1);
+  LS.set('fp-history', state.history);
+  render();
+}
+
+/* ============ ОФОРМЛЕНИЕ И ОГРАНИЧЕНИЯ ============ */
+function applyTheme() {
+  document.documentElement.dataset.theme = state.theme;
+  document.documentElement.dataset.scheme = state.scheme;
+}
+function setTheme(t) { state.theme = t; LS.set('fp-theme', t); applyTheme(); render(); }
+function setScheme(s) { state.scheme = s; LS.set('fp-scheme', s); applyTheme(); render(); }
+function toggleAllergen(k, on) {
+  const a = state.block.allergens.filter(x => x !== k);
+  state.block.allergens = on ? [...a, k] : a;
+  LS.set('fp-block', state.block);
+  render();
+}
+function saveDislikes() {
+  state.block.dislikes = document.getElementById('dis').value;
+  LS.set('fp-block', state.block);
+  alert('Сохранено. Составьте меню заново, чтобы применить к плану.');
+  render();
+}
+
+/* ============ ВКЛАДКА «ЧТО ПРИГОТОВИТЬ» ============ */
+function dishCard(d, miss) {
+  const rows = d.g.map(([n, g]) => {
+    const need = g * state.persons, h = haveAmt(n), ok = h >= need;
+    return `<li class="${ok?'ok':'no'}">${ok?'✓':'✗'} ${n}: нужно ${fmtG(need)}, есть ${fmtG(h)}${ok ? '' : ` · не хватает ${fmtG(need - h)}`}</li>`;
+  }).join('');
+  return `
+    <div class="dish-card">
+      ${thumb(d)}
+      <div class="info">
+        <b>${d.n}</b> <span class="tag ${miss.length?'miss':'ok'}">${miss.length ? 'не хватает: ' + miss.length : 'всё есть'}</span>
+        <div class="muted">${MEALS[d.m]} · ${d.k} ккал · ${kbzhu(d)}</div>
+        <details><summary>Состав и рецепт</summary><ul class="ings">${rows}</ul><p>${d.s}</p></details>
+      </div>
+    </div>`;
+}
+
+function fridgeScreen() {
+  const pool = DISHES.filter(d => !dishBlocked(d) && (state.fMeal === 'all' || d.m === state.fMeal))
+    .map(d => ({ d, miss: dishStatus(d) }));
+  const ready = pool.filter(x => !x.miss.length);
+  const rest = pool.filter(x => x.miss.length).sort((a, b) => a.miss.length - b.miss.length);
+  const list = ready.length >= 6 ? ready : [...ready, ...rest.slice(0, 12 - ready.length)];
+  const hasStock = Object.keys(state.have).length > 0;
+
+  const hint = !hasStock ? 'Добавьте продукты и сколько граммов есть дома.'
+    : !ready.length ? 'Полностью готовых блюд пока нет. Ниже — блюда, которым не хватает меньше всего продуктов.'
+    : `Можно приготовить без докупки: ${ready.length}.`;
+
+  const stock = hasStock
+    ? Object.entries(state.have).map(([n, g]) => `<span>${n} ${fmtG(g)}<button onclick="removeHave('${n}')">×</button></span>`).join('')
+    : '<span class="muted">Пока ничего не добавлено</span>';
+  const quick = COMMON.filter(c => !findHave(c)).map(c => `<button onclick="setHave('${c}', 500)">+ ${c}</button>`).join('');
+  const filters = [['all','Все'], ...Object.entries(MEALS)].map(([k, v]) =>
+    `<label class="chip"><input type="radio" name="fm" ${state.fMeal===k?'checked':''} onchange="state.fMeal='${k}';render()"><span>${v}</span></label>`).join('');
+
+  return `
+    <section class="card">
+      <h2>Что приготовить из того, что есть</h2>
+      <p class="muted">Введите продукт и сколько граммов есть дома. Блюда считаются на ${state.persons} чел. (число персон меняется на шаге 2 плана).</p>
+      <div class="fridge-input">
+        <input id="hInp" type="text" list="ings" placeholder="Например: курица" onkeydown="if(event.key==='Enter')addHave()">
+        <input id="gInp" type="number" min="1" value="500"> <span class="muted">г</span>
+        <button onclick="addHave()">Добавить</button>
+        <button class="ghost" onclick="clearHave()">Очистить</button>
+      </div>
+      <div class="have">${stock}</div>
+      <h3>Быстрый выбор (500 г)</h3>
+      <div class="quick">${quick}</div>
+      <h3>Тип приёма пищи</h3>
+      <div class="chips">${filters}</div>
+    </section>
+    <section class="card">
+      <p><b>${hint}</b></p>
+      ${list.map(x => dishCard(x.d, x.miss)).join('')}
+      <p class="muted">Совпадение по названию продукта. Блюда с аллергенами и нелюбимыми продуктами скрыты.</p>
+    </section>`;
+}
+
+/* ============ ЭКРАНЫ ПЛАНИРОВЩИКА ============ */
 function setBudget(v) {
   let n = Math.round(+v); if (!n || n < 1) n = 1; if (n > 50000) n = 50000;
   state.budget = n;
@@ -303,18 +546,10 @@ function setPersons(d) {
   state.persons = Math.min(10, Math.max(1, state.persons + d));
   document.getElementById('pVal').textContent = state.persons;
 }
-function toggleDay(d, on) {
-  state.days = DAYS.filter(x => x === d ? on : state.days.includes(x));
-}
-function selectAll(meal, on) {
-  DISHES.filter(d => d.meal === meal).forEach(d => state.selected[d.id] = on);
-  render();
-}
-function go(n) {
-  state.step = n;
-  render();
-  window.scrollTo({ top: 0 });
-}
+function toggleDay(d, on) { state.days = DAYS.filter(x => x === d ? on : state.days.includes(x)); }
+function selectAll(meal, on) { DISHES.filter(d => d.m === meal).forEach(d => state.selected[d.id] = on); render(); }
+function go(n) { state.step = n; render(); window.scrollTo(0, 0); }
+function setMode(m) { state.mode = m; render(); window.scrollTo(0, 0); }
 function resetAll() {
   Object.assign(state, { step:1, budget:5000, persons:2, days:[...DAYS], snacks:1, diet:'any', kcal:'normal', selected:{}, plan:null, warnings:[], owned:{} });
   render();
@@ -326,10 +561,10 @@ const screens = {
       <h2>1. Бюджет на весь период</h2>
       <p class="muted">Сколько готовы потратить на питание за все выбранные дни (от 1 до 50 000 ₽)</p>
       <input type="range" id="bRange" min="1" max="50000" step="1" value="${state.budget}" oninput="setBudget(this.value)">
-      <div class="chips" style="align-items:center">
+      <div class="chips">
         <input type="number" id="bNum" min="1" max="50000" value="${state.budget}" onchange="setBudget(this.value)"> <b>₽</b>
       </div>
-      <p class="muted" id="bDay">≈ ${fmt(state.budget / Math.max(1,state.days.length))} в день (дней выбрано: ${state.days.length})</p>
+      <p class="muted" id="bDay">≈ ${fmt(state.budget / Math.max(1, state.days.length))} в день (дней выбрано: ${state.days.length})</p>
       <div class="nav"><span></span><button onclick="go(2)">Далее →</button></div>
     </section>`,
 
@@ -350,7 +585,7 @@ const screens = {
       <h2>3. Дни недели</h2>
       <p class="muted">На какие дни нужно меню</p>
       <div class="chips">
-        ${DAYS.map((d,i) => `
+        ${DAYS.map((d, i) => `
           <label class="chip"><input type="checkbox" ${state.days.includes(d)?'checked':''}
             onchange="toggleDay('${d}', this.checked)"><span>${DAYS_FULL[i]}</span></label>`).join('')}
       </div>
@@ -379,24 +614,25 @@ const screens = {
       </div>
     </section>`,
 
-  5: () => `
+  5: () => {
+    const hidden = DISHES.filter(dishBlocked).length;
+    return `
     <section class="card">
       <h2>5. Выберите блюда</h2>
-      <p class="muted">В каждой категории 10 вариантов. Снимите галочки с тех, которые не хотите видеть в меню.</p>
-      ${Object.entries(MEALS).map(([k,label]) => `
+      <p class="muted">Снимите галочки с блюд, которые не хотите видеть в меню.${hidden ? ` Скрыто по ограничениям: ${hidden}.` : ''}</p>
+      ${Object.entries(MEALS).map(([k, label]) => `
         <h3>${label}
           <button class="small" onclick="selectAll('${k}', true)">Все</button>
           <button class="small ghost" onclick="selectAll('${k}', false)">Ни одного</button>
         </h3>
         <div class="dishes">
-          ${DISHES.filter(d => d.meal === k).map(d => `
+          ${DISHES.filter(d => d.m === k && !dishBlocked(d)).map(d => `
             <label class="dish-pick">
               ${thumb(d)}
-              <input type="checkbox" ${state.selected[d.id]!==false?'checked':''}
-                onchange="state.selected[${d.id}] = this.checked">
+              <input type="checkbox" ${state.selected[d.id]!==false?'checked':''} onchange="state.selected[${d.id}] = this.checked">
               <div>
-                <b>${d.name}</b>
-                <div class="muted">${d.kcal} ккал · ${fmt(dishCost(d))} на 1 чел. · ${PROT[d.prot]}</div>
+                <b>${d.n}</b>
+                <div class="muted">${d.k} ккал · ${fmt(dishCost(d))} на 1 чел. · ${PROT[d.t]}</div>
               </div>
             </label>`).join('')}
         </div>`).join('')}
@@ -404,26 +640,29 @@ const screens = {
         <button class="ghost" onclick="go(4)">← Назад</button>
         <button onclick="toMenu()">Составить меню →</button>
       </div>
-    </section>`,
+    </section>`;
+  },
 
   6: () => {
     const warn = state.warnings.map(w => `<div class="alert">⚠️ ${w}</div>`).join('');
+    const stale = state.plan.some(d => d.meals.some(m => dishBlocked(dish(m.dishId))));
     return `
     <section>
       <div class="card">
         <h2>6. Ваше меню</h2>
-        <p class="muted">Персон: ${state.persons} · дней: ${state.days.length} · перекусов в день: ${state.snacks} · ${DIETS[state.diet]} · ${KCAL[state.kcal]} · бюджет ${fmt(state.budget)}</p>
+        <p class="muted">Персон: ${state.persons} · дней: ${state.plan.length} · перекусов: ${state.snacks} · ${DIETS[state.diet]} · ${KCAL[state.kcal]} · бюджет ${fmt(state.budget)}</p>
         ${warn}
-        <p class="muted">Стоимость в карточках указана на всех персон, ккал — на 1 порцию.</p>
+        ${stale ? '<div class="alert">⚠️ В меню есть блюда, которые теперь исключены вашими ограничениями. Нажмите «Изменить блюда» и составьте меню заново.</div>' : ''}
+        <p class="muted">Стоимость в карточках указана на всех персон, ккал и КБЖУ — на 1 порцию.</p>
       </div>
       ${state.plan.map((d, di) => {
-        const dayKcal = d.meals.reduce((s,m) => s + dish(m.dishId).kcal, 0);
-        const dayCost = d.meals.reduce((s,m) => s + dishCostTotal(dish(m.dishId)), 0);
+        const day = sumDay(d.meals);
+        const dayCost = d.meals.reduce((s, m) => s + dishCostTotal(dish(m.dishId)), 0);
         return `
         <div class="card">
           <div class="day-head">
             <h3>${DAYS_FULL[DAYS.indexOf(d.day)]}</h3>
-            <span class="muted">${dayKcal} ккал на 1 чел. · ${fmt(dayCost)}</span>
+            <span class="muted">${Math.round(day.k)} ккал · ${kbzhu(day)} · ${fmt(dayCost)}</span>
           </div>
           ${d.meals.map((m, mi) => {
             const ds = dish(m.dishId);
@@ -432,15 +671,15 @@ const screens = {
               <div class="meal-top">
                 ${thumb(ds)}
                 <span class="tag">${MEALS[m.type]}</span>
-                <b>${ds.name}</b>
-                <span class="muted">${ds.kcal} ккал · ${fmt(dishCostTotal(ds))}</span>
+                <b>${ds.n}</b>
+                <span class="muted">${ds.k} ккал · ${kbzhu(ds)} · ${fmt(dishCostTotal(ds))}</span>
                 <button class="small" onclick="swapDish(${di}, ${mi})">🔄 Заменить</button>
               </div>
               <details>
                 <summary>Рецепт и состав</summary>
-                <ul>${ds.ing.map(([n,g]) => `<li>${n} — ${fmtG(g * state.persons)}</li>`).join('')}</ul>
-                <p>${ds.steps}</p>
-                <a href="https://yandex.ru/search/?text=${encodeURIComponent('рецепт ' + ds.name)}" target="_blank">Подробный рецепт в интернете ↗</a>
+                <ul>${ds.g.map(([n, g]) => `<li>${n} — ${fmtG(g * state.persons)}</li>`).join('')}</ul>
+                <p>${ds.s}</p>
+                <a href="https://yandex.ru/search/?text=${encodeURIComponent('рецепт ' + ds.n)}" target="_blank">Подробный рецепт в интернете ↗</a>
               </details>
             </div>`;
           }).join('')}
@@ -456,11 +695,12 @@ const screens = {
   7: () => {
     const list = shoppingList();
     const total = totalCost();
-    const toBuy = list.filter(x => !state.owned[x.name]).reduce((s,x) => s + x.cost, 0);
+    const toBuy = list.filter(x => !state.owned[x.name]).reduce((s, x) => s + x.cost, 0);
     const left = state.budget - toBuy;
-    const avgKcal = Math.round(state.plan.reduce((s,d) =>
-      s + d.meals.reduce((a,m) => a + dish(m.dishId).kcal, 0), 0) / state.plan.length);
-    const perPersonDay = total / state.persons / state.plan.length;
+    const days = state.plan.length;
+    const avgKcal = Math.round(state.plan.reduce((s, d) => s + sumDay(d.meals).k, 0) / days);
+    const avgDay = state.plan.reduce((s, d) => s + sumDay(d.meals).b, 0) / days;
+    const perPersonDay = total / state.persons / days;
 
     return `
     <section>
@@ -472,14 +712,15 @@ const screens = {
           <div><span class="muted">К покупке (без «есть дома»)</span><b>${fmt(toBuy)}</b></div>
           <div><span class="muted">Остаток бюджета</span><b class="${left<0?'bad':'good'}">${fmt(left)}</b></div>
           <div><span class="muted">Ккал в день (1 чел.)</span><b>≈ ${avgKcal}</b></div>
-          <div><span class="muted">Стоимость на 1 чел. в день</span><b>${fmt(perPersonDay)}</b></div>
+          <div><span class="muted">Белки в день (1 чел.)</span><b>≈ ${Math.round(avgDay)} г</b></div>
+          <div><span class="muted">На 1 чел. в день</span><b>${fmt(perPersonDay)}</b></div>
         </div>
         ${total > state.budget ? '<div class="alert">⚠️ Меню дороже бюджета. Замените дорогие блюда или увеличьте бюджет.</div>' : ''}
       </div>
 
       <div class="card">
         <h3>Список покупок</h3>
-        <p class="muted">Отметьте продукты, которые уже есть дома, — они будут исключены из списка и из суммы.</p>
+        <p class="muted">Отметьте продукты, которые уже есть дома, — они исключатся из списка и из суммы.</p>
         <table>
           <tr><th></th><th>Продукт</th><th>Количество</th><th>Цена</th></tr>
           ${list.map(x => `
@@ -490,6 +731,11 @@ const screens = {
               <td>${state.owned[x.name] ? '<s>'+fmt(x.cost)+'</s> 0 ₽' : fmt(x.cost)}</td>
             </tr>`).join('')}
         </table>
+        <div class="chips" style="margin-top:12px">
+          <button class="ghost" onclick="copyList()">📋 Копировать</button>
+          <button class="ghost" onclick="downloadList()">⬇️ Скачать .txt</button>
+          ${navigator.share ? '<button class="ghost" onclick="shareList()">📤 Поделиться</button>' : ''}
+        </div>
       </div>
 
       <div class="nav">
@@ -503,9 +749,62 @@ const screens = {
   }
 };
 
+function historyScreen() {
+  if (!state.history.length) return `
+    <section class="card"><h2>История меню</h2>
+      <p class="muted">Здесь появятся меню, которые вы составили. Хранятся последние 20.</p></section>`;
+  return `
+    <section class="card"><h2>История меню</h2>
+      ${state.history.map((h, i) => `
+        <div class="dish-card">
+          <div class="info">
+            <b>${h.date}</b>
+            <div class="muted">${h.persons} чел. · ${h.plan.length} дн. · бюджет ${fmt(h.budget)} · меню ${fmt(h.total)}</div>
+          </div>
+          <button class="small" onclick="openHistory(${i})">Открыть</button>
+          <button class="small ghost" onclick="delHistory(${i})">×</button>
+        </div>`).join('')}
+    </section>`;
+}
+
+function settingsScreen() {
+  const allerg = Object.entries(ALLERGENS).map(([k, v]) =>
+    `<label class="chip"><input type="checkbox" ${state.block.allergens.includes(k)?'checked':''} onchange="toggleAllergen('${k}', this.checked)"><span>${v.name}</span></label>`).join('');
+  const themes = [['light','☀️ Светлая'],['dark','🌙 Тёмная']].map(([k, v]) =>
+    `<label class="chip"><input type="radio" name="th" ${state.theme===k?'checked':''} onchange="setTheme('${k}')"><span>${v}</span></label>`).join('');
+  const colors = Object.entries(SCHEMES).map(([k, v]) =>
+    `<div class="sw ${state.scheme===k?'on':''}" title="${v}" onclick="setScheme('${k}')" style="background:${({green:'#34c759',blue:'#0a84ff',orange:'#ff9500',purple:'#af52de'})[k]}"></div>`).join('');
+
+  return `
+    <section class="card">
+      <h2>Аллергены и ограничения</h2>
+      <p class="muted">Блюда с этими продуктами не попадут в план и в «Что приготовить».</p>
+      <div class="chips">${allerg}</div>
+      <h3>Нелюбимые продукты</h3>
+      <p class="muted">Через запятую, например: грибы, печень, кинза</p>
+      <div class="fridge-input">
+        <input type="text" id="dis" value="${state.block.dislikes}" placeholder="грибы, печень">
+        <button onclick="saveDislikes()">Сохранить</button>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Оформление</h2>
+      <h3>Тема</h3>
+      <div class="chips">${themes}</div>
+      <h3>Цвет</h3>
+      <div class="opt">${colors}</div>
+    </section>
+    <section class="card">
+      <h2>Цены и установка</h2>
+      <p class="muted">Источник цен: ${priceSource}. Чтобы обновить цены, отредактируйте файл prices.json в репозитории (формат: "Продукт": цена за кг) и сохраните.</p>
+      <h3>Установка на телефон</h3>
+      <p class="muted">Android (Chrome): меню ⋮ → «Установить приложение». iPhone (Safari): «Поделиться» → «На экран «Домой»».</p>
+    </section>`;
+}
+
 /* ============ РЕНДЕР ============ */
 function renderSteps() {
-  stepsEl.innerHTML = STEP_NAMES.map((n,i) => {
+  stepsEl.innerHTML = STEP_NAMES.map((n, i) => {
     const num = i + 1;
     const cls = (num === state.step ? 'active' : '') + (num < state.step ? ' done' : '');
     const click = num <= state.step ? `onclick="go(${num})"` : '';
@@ -513,12 +812,37 @@ function renderSteps() {
   }).join('');
 }
 
-function render() {
-  renderSteps();
-  app.innerHTML = screens[state.step]();
+function thumb(d) {
+  const url = `https://loremflickr.com/320/240/${encodeURIComponent(d.kw)}?lock=${d.id}`;
+  return `<div class="thumb"><span>${d.i}</span><img src="${url}" alt="${d.n}" loading="lazy" onerror="this.remove()"></div>`;
 }
 
+function render() {
+  modesEl.innerHTML = [['plan','📅 План'],['fridge','🧺 Что приготовить'],['history','🕘 История'],['settings','⚙️ Настройки']]
+    .map(([k, v]) => `<button class="${state.mode===k?'on':''}" onclick="setMode('${k}')">${v}</button>`).join('');
+  stepsEl.style.display = state.mode === 'plan' ? 'flex' : 'none';
+  if (state.mode === 'plan') { renderSteps(); app.innerHTML = screens[state.step](); }
+  else if (state.mode === 'fridge') app.innerHTML = fridgeScreen();
+  else if (state.mode === 'history') app.innerHTML = historyScreen();
+  else app.innerHTML = settingsScreen();
+}
+
+/* ============ ФОН И ЗАПУСК ============ */
+const bgEl = document.createElement('div');
+bgEl.className = 'bg';
+bgEl.innerHTML = Array.from({ length: 22 }, (_, i) =>
+  `<span style="left:${(i*37)%100}%;top:${(i*53)%100}%;font-size:${36 + (i*13)%48}px;animation-duration:${10 + i%7}s">${FRUITS[i % FRUITS.length]}</span>`
+).join('');
+document.body.prepend(bgEl);
+
+applyTheme();
+updateDatalist();
 render();
+loadPrices();
+
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
 </script>
 </body>
 </html>
