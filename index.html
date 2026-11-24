@@ -18,7 +18,7 @@
   * { box-sizing: border-box; }
   html, body { margin: 0; min-height: 100%; }
   body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; color: var(--ink);
-    background: linear-gradient(160deg, var(--a3), var(--a2) 55%, var(--a)) fixed; min-height: 100vh; }
+    background: linear-gradient(160deg, var(--a3), var(--a2) 55%, var(--a)) fixed; min-height: 100vh; position: relative; }
   [data-theme=dark] body::before { content: ""; position: fixed; inset: 0; background: rgba(0,0,0,.45); }
   .bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
   .bg span { position: absolute; opacity: .2; user-select: none; animation: float 12s ease-in-out infinite alternate; }
@@ -57,8 +57,6 @@
   .chip:has(input:checked) { border-color: var(--a); background: var(--pale); }
   .counter { display: flex; align-items: center; gap: 18px; font-size: 26px; }
   .counter span { min-width: 50px; text-align: center; font-weight: 700; }
-  .dishes { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; margin-bottom: 14px; }
-  .dish-pick { display: flex; gap: 10px; align-items: center; background: var(--tile); border-radius: 16px; padding: 8px; cursor: pointer; }
   .day-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; align-items: baseline; }
   .meal { border-top: 1px solid var(--line); padding: 10px 0; }
   .meal-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -93,6 +91,10 @@
   .opt { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
   .sw { width: 34px; height: 34px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; }
   .sw.on { border-color: var(--ink); }
+  .rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 6px; }
+  .row { display: flex; align-items: center; gap: 8px; background: var(--tile); border-radius: 12px; padding: 6px 8px; }
+  .star { background: none; color: #f5b300; font-size: 20px; padding: 0 4px; line-height: 1; }
+  .star.off { color: var(--muted); }
   @media print { .seg, .steps, .nav, button, input[type=checkbox], .bg { display: none; } }
 </style>
 </head>
@@ -117,6 +119,7 @@ const DAYS = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
 const DAYS_FULL = ['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
 const DIETS = { any:'Любое', meat:'Только мясо', fish:'Только рыба', mix:'Рыба и мясо', veg:'Вегетарианское' };
 const KCAL = { normal:'Не важно', more:'Больше ккал', less:'Меньше ккал' };
+const FAV_MODE = { off:'Как обычно', more:'Чаще', only:'Только любимые' };
 const PROT = { meat:'🍖 мясо', fish:'🐟 рыба', veg:'🥦 вегетарианское' };
 const SCHEMES = { green:'Зелёный', blue:'Синий', orange:'Оранжевый', purple:'Фиолетовый' };
 const SCHEME_COLORS = { green:'#34c759', blue:'#0a84ff', orange:'#ff9500', purple:'#af52de' };
@@ -134,7 +137,7 @@ const ALLERGENS = {
   citrus:  { name:'Цитрусовые', list:['Апельсин','Мандарин','Лимон'] }
 };
 
-// Цены, ₽ за кг. ОРИЕНТИРОВОЧНЫЕ, не проверены по актуальным данным Крыма 2026.
+// Цены, ₽ за кг. ОРИЕНТИРОВОЧНЫЕ. Основной источник — файл prices.json.
 const DEFAULT_PRICES = {
   'Овсянка':160,'Молоко':100,'Банан':130,'Орехи':1300,'Яйца':190,'Ветчина':800,'Помидоры':250,'Лосось':1600,
   'Зелень':700,'Творог':400,'Крупа манная':110,'Сметана':290,'Мука':90,'Курица':420,'Гречка':130,'Лук':60,
@@ -143,13 +146,13 @@ const DEFAULT_PRICES = {
   'Фасоль':220,'Макароны':120,'Свинина':620,'Брокколи':500,'Минтай':390,'Мёд':800,'Яблоко':150,'Кефир':200,
   'Печенье':550,'Сухофрукты':650,'Йогурт':290,'Авокадо':700,'Креветки':1000,'Чеснок':450,'Булгур':220,
   'Кабачок':130,'Тыква':110,'Шпинат':450,'Сливки':450,'Чай чёрный':1600,'Груша':200,'Апельсин':180,'Мандарин':220,
-  'Виноград':280,'Клубника':550,'Киви':330,'Ягоды':450,'Лимон':330,
-  'Сливочное масло':1000,'Сахар':95,'Разрыхлитель':400,'Баранина':950,'Грибы':480,'Горчица':500,'Соевый соус':380,
-  'Имбирь':550,'Кокосовое молоко':480,'Карри':1500,'Нут':260,'Кинза':900,'Лаваш':550,'Сосиска':700,'Сухари':380,
-  'Тортилья':750,'Перец чили':1300,'Бекон':1100,'Горошек':320,'Салат':550,'Майонез':380,'Колбаса':650,
-  'Селёдка':600,'Крабовые палочки':600,'Кукуруза':260,'Тахини':1300,'Базилик':950,'Маскарпоне':1300,
-  'Шоколад':950,'Какао':950,'Кофе':1900,'Виноградные листья':450,'Нори':1600,'Рисовая бумага':850,'Лапша':220,
-  'Ростки':320,'Арахис':600,'Оливки':750,'Печень говяжья':650,'Баклажан':220,'Томатная паста':330,'Паприка':550
+  'Виноград':280,'Клубника':550,'Киви':330,'Ягоды':450,'Лимон':330,'Сливочное масло':1000,'Сахар':95,
+  'Разрыхлитель':400,'Баранина':950,'Грибы':480,'Горчица':500,'Соевый соус':380,'Имбирь':550,'Кокосовое молоко':480,
+  'Карри':1500,'Нут':260,'Кинза':900,'Лаваш':550,'Сосиска':700,'Сухари':380,'Тортилья':750,'Перец чили':1300,
+  'Бекон':1100,'Горошек':320,'Салат':550,'Майонез':380,'Колбаса':650,'Селёдка':600,'Крабовые палочки':600,
+  'Кукуруза':260,'Тахини':1300,'Базилик':950,'Маскарпоне':1300,'Шоколад':950,'Какао':950,'Кофе':1900,
+  'Виноградные листья':450,'Нори':1600,'Рисовая бумага':850,'Лапша':220,'Ростки':320,'Арахис':600,'Оливки':750,
+  'Печень говяжья':650,'Баклажан':220,'Томатная паста':330,'Паприка':550
 };
 let PRICES = { ...DEFAULT_PRICES };
 let priceSource = 'встроенные';
@@ -214,7 +217,6 @@ const DISHES = [
   {id:54,n:'Морковь с творогом',m:'snack',t:'veg',k:130,b:10,f:4,c:12,i:'🥕',kw:'carrot',g:[['Морковь',100],['Творог',80]],s:'Морковь нарезать палочками и подать с творогом.'},
   {id:55,n:'Яблоко с сыром',m:'snack',t:'veg',k:150,b:7,f:9,c:12,i:'🧀',kw:'apple cheese',g:[['Яблоко',120],['Сыр',30]],s:'Нарезать яблоко дольками и подать с сыром.'},
 
-  // ===== НОВЫЕ БЛЮДА =====
   {id:56,n:'Котлеты домашние',m:'lunch',t:'meat',k:330,b:22,f:18,c:18,i:'🍖',kw:'cutlets',g:[['Фарш говяжий',120],['Лук',30],['Яйца',30],['Хлеб',30],['Молоко',30],['Масло растительное',10]],s:'Замочить хлеб в молоке, смешать с фаршем, луком, яйцом, солью и перцем. Сформовать котлеты, обжарить с двух сторон, довести до готовности под крышкой.'},
   {id:57,n:'Бефстроганов',m:'lunch',t:'meat',k:420,b:30,f:26,c:14,i:'🥩',kw:'beef stroganoff',g:[['Говядина',150],['Лук',50],['Грибы',80],['Сметана',60],['Горчица',5],['Масло растительное',10]],s:'Обжарить мясо и лук, добавить грибы, в конце сметану с горчицей. Тушить 5 минут.'},
   {id:58,n:'Шашлык',m:'dinner',t:'meat',k:350,b:36,f:20,c:4,i:'🍢',kw:'shashlik',g:[['Свинина',200],['Лук',50],['Лимон',20]],s:'Замариновать мясо с луком, лимонным соком и специями на 2–3 часа. Нанизать на шампуры, жарить на углях 15–20 минут, переворачивая.'},
@@ -308,12 +310,17 @@ const state = {
   mode: 'plan', step: 1,
   budget: 5000, persons: 2, days: [...DAYS], mains: 2, snacks: 1, dessert: false, diet: 'any', kcal: 'normal',
   selected: {}, plan: null, warnings: [], owned: {},
-  have: LS.get('fp-stock', {}),
-  block: LS.get('fp-block', { allergens: [], dislikes: '' }),
+  have: LS.get('fp-stock', {}),                                   // {продукт: граммы}
+  block: LS.get('fp-block', { allergens: [], dislikes: '' }),     // ограничения
   history: LS.get('fp-history', []),
   theme: LS.get('fp-theme', 'light'),
   scheme: LS.get('fp-scheme', 'green'),
-  fMeal: 'all'
+  fMeal: 'all',
+  fav: LS.get('fp-fav', []),       // id любимых блюд
+  favMode: 'off',                  // off | more | only
+  onlyFav: false,                  // на шаге 5: только любимые
+  q: '',                           // поиск на шаге 5
+  cat: 'breakfast'                 // вкладка на шаге 5
 };
 
 const app = document.getElementById('app');
@@ -326,14 +333,14 @@ const dish = id => DISHES.find(d => d.id === id);
 const fmt = n => Math.round(n).toLocaleString('ru-RU') + ' ₽';
 const fmtG = g => g >= 1000 ? (g/1000).toLocaleString('ru-RU', {maximumFractionDigits:2}) + ' кг' : Math.round(g) + ' г';
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-const norm = s => s.toLowerCase().replace(/ё/g, 'е').trim();
+const norm = s => String(s).toLowerCase().replace(/ё/g, 'е').trim();
 // Название продукта: точное совпадение, иначе по первым 4 буквам
 const canon = v => {
   const n = norm(v);
   const exact = Object.keys(PRICES).find(k => norm(k) === n);
   if (exact) return exact;
   const near = Object.keys(PRICES).find(k => norm(k).slice(0, 4) === n.slice(0, 4));
-  return near || (v.charAt(0).toUpperCase() + v.slice(1));
+  return near || (String(v).charAt(0).toUpperCase() + String(v).slice(1));
 };
 const dishCost = d => d.g.reduce((s, [n, g]) => s + g/1000 * (PRICES[n] || 0), 0);
 const dishCostTotal = d => dishCost(d) * state.persons;
@@ -341,7 +348,7 @@ const radios = (name, obj, cur) => Object.entries(obj).map(([k, v]) =>
   `<label class="chip"><input type="radio" name="${name}" value="${k}" ${cur==k?'checked':''} onchange="state.${name}=this.value"><span>${v}</span></label>`
 ).join('');
 
-const blockedNames = () => state.block.dislikes.split(',').map(s => canon(s.trim())).filter(Boolean);
+const blockedNames = () => state.block.dislikes.split(',').map(s => s.trim()).filter(Boolean).map(canon);
 function blockedIng(name) {
   if (blockedNames().some(x => norm(x) === norm(name))) return true;
   return state.block.allergens.some(a => ALLERGENS[a].list.includes(name));
@@ -397,6 +404,21 @@ function dishMissing(d) {
     .map(x => ({ ...x, lack: x.need - x.have }));
 }
 
+/* ============ ЛЮБИМЫЕ ============ */
+function toggleFav(id) {
+  state.fav = state.fav.includes(id) ? state.fav.filter(x => x !== id) : [...state.fav, id];
+  LS.set('fp-fav', state.fav);
+  render();
+}
+function setQ(v) {
+  state.q = v;
+  render();
+  const el = document.getElementById('qInp');
+  el.focus();
+  el.setSelectionRange(v.length, v.length);
+}
+function setCat(k) { state.cat = k; render(); }
+
 /* ============ ГЕНЕРАЦИЯ ПЛАНА ============ */
 function getPool(type) {
   const warns = [];
@@ -411,10 +433,15 @@ function getPool(type) {
     const half = Math.ceil(s.length / 2);
     p = state.kcal === 'more' ? s.slice(half) : s.slice(0, half);
   }
+  const favs = p.filter(d => state.fav.includes(d.id));
+  if (state.favMode === 'only') {
+    if (favs.length) p = favs;
+    else warns.push(`В категории «${MEALS[type]}» нет любимых блюд — показаны все.`);
+  } else if (state.favMode === 'more' && favs.length) {
+    p = [...p, ...favs, ...favs];   // любимые попадают в меню чаще
+  }
   return { list: p, warns };
 }
-
-const planTypes = () => [...MAINS[state.mains], ...Array(state.snacks ? 1 : 0).fill('snack'), ...(state.dessert ? ['dessert'] : [])];
 
 function totalCost() {
   return state.plan.reduce((s, d) => s + d.meals.reduce((a, m) => a + dishCostTotal(dish(m.dishId)), 0), 0);
@@ -437,16 +464,13 @@ function balanceBudget(pools) {
 function generatePlan() {
   state.warnings = [];
   const pools = {};
-  const types = [...new Set([...MAINS[state.mains], 'snack', 'dessert'])];
-  for (const t of types) {
+  const perDay = [...MAINS[state.mains], ...Array(state.snacks).fill('snack'), ...(state.dessert ? ['dessert'] : [])];
+  for (const t of new Set(perDay)) {
     const r = getPool(t);
     pools[t] = r.list;
     r.warns.forEach(w => { if (!state.warnings.includes(w)) state.warnings.push(w); });
+    if (!r.list.length) return false;
   }
-  for (const t of planTypes()) if (!pools[t].length) return false;
-
-  // Для каждого дня: основные приёмы, перекусы (по числу), десерт (если включён)
-  const perDay = [...MAINS[state.mains], ...Array(state.snacks).fill('snack'), ...(state.dessert ? ['dessert'] : [])];
   state.plan = state.days.map(day => ({
     day, meals: perDay.map(t => ({ type: t, dishId: pick(pools[t]).id }))
   }));
@@ -489,6 +513,7 @@ const sumDay = meals => meals.reduce((s, m) => {
 }, { k: 0, b: 0, f: 0, c: 0 });
 const kbzhu = o => `Б ${Math.round(o.b)} · Ж ${Math.round(o.f)} · У ${Math.round(o.c)}`;
 
+/* ============ СПИСОК ПОКУПОК ============ */
 function shoppingList() {
   const map = {};
   state.plan.forEach(d => d.meals.forEach(m =>
@@ -694,6 +719,8 @@ const screens = {
       <div class="chips">
         <label class="chip"><input type="checkbox" ${state.dessert?'checked':''} onchange="state.dessert=this.checked"><span>🍰 Добавить десерт</span></label>
       </div>
+      <h3>Любимые блюда (★ на шаге 5)</h3>
+      <div class="chips">${radios('favMode', FAV_MODE, state.favMode)}</div>
       <h3>Что едим</h3>
       <div class="chips">${radios('diet', DIETS, state.diet)}</div>
       <h3>Калорийность</h3>
@@ -705,28 +732,43 @@ const screens = {
     </section>`,
 
   5: () => {
-    const hidden = DISHES.filter(dishBlocked).length;
     const keys = [...new Set([...MAINS[state.mains], 'snack', ...(state.dessert ? ['dessert'] : [])])];
+    const cat = keys.includes(state.cat) ? state.cat : keys[0];
+    const q = norm(state.q || '');
+    const all = DISHES.filter(d => d.m === cat && !dishBlocked(d));
+    const list = all.filter(d => (!q || norm(d.n).includes(q)) && (!state.onlyFav || state.fav.includes(d.id)));
+    const selCount = all.filter(d => state.selected[d.id] !== false).length;
+    const hidden = DISHES.filter(dishBlocked).length;
+    const qVal = (state.q || '').replace(/"/g, '&quot;');
     return `
     <section class="card">
       <h2>5. Выберите блюда</h2>
-      <p class="muted">Снимите галочки с блюд, которые не хотите видеть в меню.${hidden ? ` Скрыто по ограничениям: ${hidden}.` : ''}</p>
-      ${keys.map(k => `
-        <h3>${MEALS[k]}
-          <button class="small" onclick="selectAll('${k}', true)">Все</button>
-          <button class="small ghost" onclick="selectAll('${k}', false)">Ни одного</button>
-        </h3>
-        <div class="dishes">
-          ${DISHES.filter(d => d.m === k && !dishBlocked(d)).map(d => `
-            <label class="dish-pick">
-              ${thumb(d)}
-              <input type="checkbox" ${state.selected[d.id]!==false?'checked':''} onchange="state.selected[${d.id}] = this.checked">
-              <div>
-                <b>${d.n}</b>
-                <div class="muted">${d.k} ккал · ${fmt(dishCost(d))} на 1 чел. · ${PROT[d.t]}</div>
-              </div>
-            </label>`).join('')}
-        </div>`).join('')}
+      <p class="muted">Снимите галочки с ненужных. ☆ — отметить любимое. Режим «чаще» или «только любимые» настраивается на шаге 4.${hidden ? ` Скрыто по ограничениям: ${hidden}.` : ''}</p>
+      <div class="fridge-input">
+        <input id="qInp" type="text" value="${qVal}" placeholder="🔍 Поиск блюда" oninput="setQ(this.value)">
+        <label class="chip"><input type="checkbox" ${state.onlyFav?'checked':''} onchange="state.onlyFav=this.checked;render()"><span>★ Только любимые</span></label>
+      </div>
+      <div class="chips" style="margin-top:10px">
+        ${keys.map(k => `<label class="chip"><input type="radio" name="cat" ${k===cat?'checked':''} onchange="setCat('${k}')"><span>${MEALS[k]}</span></label>`).join('')}
+      </div>
+      <p class="muted">${MEALS[cat]}: выбрано ${selCount} из ${all.length}
+        <button class="small" onclick="selectAll('${cat}', true)">Все</button>
+        <button class="small ghost" onclick="selectAll('${cat}', false)">Ни одного</button>
+      </p>
+      <div class="rows">
+        ${list.map(d => {
+          const fav = state.fav.includes(d.id);
+          return `
+          <div class="row">
+            <button class="star ${fav?'':'off'}" title="Любимое" onclick="toggleFav(${d.id})">${fav?'★':'☆'}</button>
+            <input type="checkbox" ${state.selected[d.id]!==false?'checked':''} onchange="state.selected[${d.id}]=this.checked">
+            <div style="flex:1;min-width:0">
+              <b>${d.i} ${d.n}</b>
+              <div class="muted">${d.k} ккал · ${fmt(dishCost(d))} на 1 чел.</div>
+            </div>
+          </div>`;
+        }).join('') || '<p class="muted">Ничего не найдено</p>'}
+      </div>
       <div class="nav">
         <button class="ghost" onclick="go(4)">← Назад</button>
         <button onclick="toMenu()">Составить меню →</button>
